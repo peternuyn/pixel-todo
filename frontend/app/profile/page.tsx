@@ -14,7 +14,12 @@ export default function ProfilePage() {
   return (
     <main
       className="relative min-h-screen px-7 pt-5 pb-24 z-[1]"
-      style={{ backgroundImage: `url(${Water.src})` }}
+      style={{ 
+        backgroundImage: `url(${Water.src})`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '64px 64px',  
+      }}
+    
     >
       <NavMenu />
       <Header />

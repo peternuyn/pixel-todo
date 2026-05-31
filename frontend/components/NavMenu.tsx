@@ -8,7 +8,7 @@ const ITEMS: Item[] = [
   { label: "Home", icon: "🏠", href: "/" },
   { label: "Rooms", icon: "🌿", href: "/rooms" },
   { label: "Profile", icon: "😺", href: "/profile" },
-  { label: "Sign out", icon: "🚪", href: "/signout" },
+  { label: "Sign out", icon: "🚪", href: "/login" },
 ];
 
 export default function NavMenu() {
