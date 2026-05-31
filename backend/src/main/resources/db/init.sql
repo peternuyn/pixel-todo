@@ -12,6 +12,9 @@ CREATE TABLE users (
     pet_id         UUID,                        -- FK added after pets table
     study_time_seconds  INT  NOT NULL DEFAULT 0,
     sessions_done       INT  NOT NULL DEFAULT 0,
+    current_streak       INT  NOT NULL DEFAULT 0,
+    longest_streak       INT  NOT NULL DEFAULT 0,
+    last_studied_at  TIMESTAMPTZ,
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
