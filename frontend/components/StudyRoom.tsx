@@ -29,9 +29,7 @@ export default function StudyRoom() {
       </div>
 
       <div className="relative aspect-[16/9] day-sky overflow-hidden">
-        <span className="absolute top-3 left-3.5 font-press text-[8px] text-sun bg-black/45 px-1.5 py-1 border-2 border-sun">
-          {tab === "video" ? "VIDEO · LIVE" : "WHITEBOARD"}
-        </span>
+        
         <FarmScene />
       </div>
     </section>
