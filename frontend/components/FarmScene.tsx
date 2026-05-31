@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import catGif from "@/assets/gifs/meo-di-ve-phia-truoc-loop.gif";
-import hills from "@/assets/hills2.svg";
+import theme from "@/assets/theme-room1.svg";
 import Pet from "./Pet";
 
 const MIN_ZOOM = 1;
@@ -103,7 +103,7 @@ export default function FarmScene() {
       >
         <div className="relative h-full aspect-square max-w-full">
           <Image
-            src={hills}
+            src={theme}
             alt=""
             fill
             priority

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Water from "@/assets/nuoc_troi.svg";
+import Water from "@/assets/gifs/water-background.gif";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import RoomCard from "@/components/rooms/RoomCard";
