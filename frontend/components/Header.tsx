@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Logo from "@/assets/logo.svg";
+import Logo from "@/assets/logo2.svg";
 export default function Header() {
   return (
     <header className="flex items-end gap-4 mb-5 max-w-[1240px] mx-auto pl-16 w-full bg-transparent">
