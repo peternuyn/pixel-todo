@@ -3,12 +3,15 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import catGif from "@/assets/gifs/meo-di-ve-phia-truoc-loop.gif";
+import cowGif from "@/assets/cow-walk.gif";
+import humanWalking from "@/assets/human-walking2.gif"
 import theme1 from "@/assets/theme-room1.svg";
 import theme2 from "@/assets/theme-room2.svg";
 import theme3 from "@/assets/theme-room3.svg";
 import theme4 from "@/assets/theme-room4.svg";
 
 import Pet from "./Pet";
+import WalkingPet from "./WalkingPet";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -133,6 +136,9 @@ export default function FarmScene() {
             name="Mai Linh"
             className="top-[44%] left-[55%] -translate-x-1/2 -translate-y-1/2 w-[18%]"
           />
+       
+          <WalkingPet src={cowGif} name="Bò" top="38%" width="12%" speed={10} minX={10} maxX={95} />
+          <WalkingPet src={humanWalking} name="Thanh" top="38%" width="8%" speed={6} minX={10} maxX={95}/>
         </div>
       </div>
 
