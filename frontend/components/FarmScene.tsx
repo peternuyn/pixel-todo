@@ -11,6 +11,7 @@ import theme3 from "@/assets/theme-room3.svg";
 import theme4 from "@/assets/theme-room4.svg";
 import Pet from "./Pet";
 import WalkingPet from "./WalkingPet";
+import waterBg from "@/assets/gifs/water-background.gif";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -97,8 +98,14 @@ export default function FarmScene() {
     setDragging(false);
   };
 
+  // Cat-paw cursors (match the global ones in globals.css). Inline styles
+  // override CSS, so we set the paw URLs here directly.
+  const PAW_DEFAULT = 'url("/cursors/catpaw_mouse_icon1.png") 8 4, default';
+  const PAW_POINTING = 'url("/cursors/catpaw_pointing_mouse_icon2.png") 12 4, grab';
+  const PAW_HOLDING = 'url("/cursors/catpaw_holding_mouse_icon_3.png") 12 4, grabbing';
+
   const cursor =
-    zoom <= MIN_ZOOM ? "default" : dragging ? "grabbing" : "grab";
+    zoom <= MIN_ZOOM ? PAW_DEFAULT : dragging ? PAW_HOLDING : PAW_POINTING;
 
   return (
     <div
@@ -110,6 +117,16 @@ export default function FarmScene() {
       className="relative w-full h-full overflow-hidden flex items-center justify-center select-none [overscroll-behavior:contain] [touch-action:none]"
       style={{ cursor }}
     >
+      {/* Animated water background — bottom layer, behind the farm scene */}
+      <div
+        className="absolute inset-0 pointer-events-none [image-rendering:pixelated]"
+        style={{
+          backgroundImage: `url(${waterBg.src})`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px 128px",
+        }}
+      />
+
       {/* The transform stage — everything scales/pans together */}
       <div
         className="relative w-full h-full flex items-center justify-center transition-transform duration-75 ease-out"
@@ -118,6 +135,7 @@ export default function FarmScene() {
           transformOrigin: "center center",
         }}
       >
+        
         <div className="relative h-full aspect-square max-w-full">
           <Image
             src={activeTheme.src}
@@ -126,7 +144,7 @@ export default function FarmScene() {
             priority
             unoptimized
             sizes="(max-width: 900px) 80vw, 50vw"
-            className="object-contain [image-rendering:pixelated] pointer-events-none opacity-90"
+            className="object-contain [image-rendering:pixelated] pointer-events-none"
           />
 
           {/* Pets — positioned relative to the hills tile */}

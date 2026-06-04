@@ -40,7 +40,7 @@ export default function Timer({
         <span>⏰</span>
         <span>Timer</span>
       </div>
-      <div className="font-vt text-[56px] leading-none tracking-wider text-ink [text-shadow:3px_3px_0_#FFE89A]">
+      <div className="font-vt text-[56px] leading-none tracking-wider text-ink [text-shadow:3px_3px_0_#FFD66B]">
         {mm}:{ss}
       </div>
       <p className="font-silk text-[11px] uppercase tracking-widest text-wood-dark mt-1.5">
