@@ -69,7 +69,7 @@ export default function LoginPage() {
         {/* Logo */}
         <Link href="/" className="flex flex-col items-center gap-2">
           <Image src={Logo.src} alt="Meowdow Study Farm" width={80} height={75} unoptimized />
-          <h1 className="font-jersey text-3xl text-ink [text-shadow:2px_2px_0_#FFE89A]">
+          <h1 className="font-jersey text-3xl text-ink [text-shadow:2px_2px_0_#FFD66B]">
             Meowdow Study Farm
           </h1>
         </Link>

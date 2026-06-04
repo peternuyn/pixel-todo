@@ -6,7 +6,7 @@ export default function Header() {
       <div className="flex items-center gap-3">
         <Image className="w-20 h-20" src={Logo} alt="Meowdow logo" />
         <div>
-          <h1 className="font-jersey text-5xl leading-none text-ink [text-shadow:3px_3px_0_#FFE89A]">
+          <h1 className="font-jersey text-5xl leading-none text-ink [text-shadow:3px_3px_0_#FFD66B]">
             Meowdow Study Farm
           </h1>
           <p className="font-press text-[9px] tracking-widest text-wood-dark mt-1">
