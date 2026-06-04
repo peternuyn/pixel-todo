@@ -18,12 +18,12 @@ CREATE TABLE users (
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
+-- Catalog of choosable pets (fixed set, seeded manually)
 CREATE TABLE pets (
-    pet_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    owner_id    UUID         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    name        VARCHAR(64)  NOT NULL,
-    sprite_url  TEXT         NOT NULL,
-    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    pet_id      UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    pet_name    VARCHAR(64)  NOT NULL,
+    sprite_key  VARCHAR(64)  NOT NULL UNIQUE,  -- maps to frontend asset filename
+    description TEXT
 );
 
 -- Back-fill the FK on users now that pets exists
@@ -82,4 +82,4 @@ CREATE INDEX idx_belong_room_user   ON belong_room(user_id);
 CREATE INDEX idx_belong_room_room   ON belong_room(room_id);
 CREATE INDEX idx_sessions_user      ON sessions(user_id);
 CREATE INDEX idx_sessions_room      ON sessions(room_id);
-CREATE INDEX idx_pets_owner         ON pets(owner_id);
+CREATE INDEX idx_pets_sprite_key    ON pets(sprite_key);
