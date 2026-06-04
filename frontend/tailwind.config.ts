@@ -8,47 +8,53 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Mint-themed sky (cool, calm)
+        // Core theme anchored on #aee7bc (soft mint-leaf)
+        // Sky / ambient gradient — light wash → main mint → deeper leaf
         sky: {
-          top: "#EDFBEF",
-          mid: "#CFF1DD",
-          bot: "#B7E4D0",
+          top: "#E6F8EC",
+          mid: "#AEE7BC", // ← brand color
+          bot: "#8FD6A6",
         },
-        // Farm grass keeps its identity but leans mint-warm
+        // Farm grass — the organic green family, rooted in the brand mint
         grass: {
-          light: "#B7E8C2",
-          DEFAULT: "#7BC894",
-          dark: "#4D9B68",
-          deeper: "#2F6D44",
+          light: "#C8F0D2",
+          DEFAULT: "#AEE7BC", // ← brand color
+          dark: "#6FC68C",
+          deeper: "#3F8E5E",
         },
         // "Wood" reframed as mint-toned planks for buttons, fences
         wood: {
-          light: "#A8E0B8",
-          DEFAULT: "#6BBF85",
-          dark: "#3F8358",
+          light: "#C2ECCD",
+          DEFAULT: "#8FD6A6",
+          dark: "#4E9D6C",
         },
-        // Warm contrast pop (chat badge etc.)
+        // Warm terracotta pop — streaks, pets, private/alert states
         barn: {
-          DEFAULT: "#E26D5C",
-          dark: "#B14534",
+          DEFAULT: "#E8806B",
+          dark: "#BE5240",
         },
-        // Card surface
+        // Card surface — pale mint parchment, brand-tinted shadow + stroke
         panel: {
-          DEFAULT: "#EDFBEF",
-          shadow: "#B7E4D0",
-          stroke: "#5BAA73",
+          DEFAULT: "#F1FBF3",
+          shadow: "#AEE7BC", // ← brand color
+          stroke: "#5FB37C",
         },
-        // Sun accents — butter-mint
+        // Sun accents — warm butter for the Pomodoro / harvest highlights
         sun: {
-          DEFAULT: "#FFE89A",
-          deep: "#E7B84A",
+          DEFAULT: "#FFD66B",
+          deep: "#E7AE3A",
+        },
+        // Futuristic aqua-cyan — shader glow, "tech" accents against organic mint
+        glow: {
+          DEFAULT: "#5FD9C4",
+          deep: "#2FB6A0",
         },
         pink: {
           soft: "#ffadc6",
         },
-        leaf: "#4caf50",
-        // Body text — dark forest, reads like mint-tinted ink
-        ink: "#1C3A26",
+        leaf: "#3F8E5E",
+        // Body text — deep forest, reads like mint-tinted ink
+        ink: "#173E2B",
         cat: {
           orange: "#f4a259",
           orangeDark: "#c97a35",
@@ -63,11 +69,11 @@ const config: Config = {
         jersey: ["var(--font-jersey)", "serif"],
       },
       boxShadow: {
-        // Hard pixel-style shadows (no blur) — dark forest for strong contrast
-        pixel: "4px 4px 0 0 #1C3A26",
-        "pixel-sm": "2px 2px 0 0 #1C3A26",
-        "pixel-lg": "6px 6px 0 0 #1C3A26",
-        "pixel-inset": "inset 0 -6px 0 0 #B7E4D0",
+        // Hard pixel-style shadows (no blur) — deep forest for strong contrast
+        pixel: "4px 4px 0 0 #173E2B",
+        "pixel-sm": "2px 2px 0 0 #173E2B",
+        "pixel-lg": "6px 6px 0 0 #173E2B",
+        "pixel-inset": "inset 0 -6px 0 0 #AEE7BC",
       },
       keyframes: {
         catBob: {
