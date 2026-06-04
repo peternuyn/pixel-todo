@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import Water from "@/assets/gifs/water-background.gif";
 import Logo from "@/assets/logo2.svg";
 import CatGifSrc from "@/assets/cat/cat-front.gif";
+import ShaderBackground from "@/components/ShaderBackground";
 
 const FEATURES = [
   { icon: "⏱️", title: "Focus Timer", desc: "Pomodoro-style timer to keep your sessions structured." },
@@ -15,15 +15,8 @@ const FEATURES = [
 
 export default function HomePage() {
   return (
-    <main
-      className="relative min-h-screen z-[1]"
-      style={{ 
-        backgroundImage: `url(${Water.src})`,
-        backgroundRepeat: 'repeat',
-        backgroundSize: '64px 64px',  
-      }}
-      
-    >
+    <main className="relative min-h-screen z-[1]">
+      <ShaderBackground />
       
     
       {/* Hero */}
@@ -37,7 +30,7 @@ export default function HomePage() {
           className="drop-shadow-lg"
         />
         <div>
-          <h1 className="font-jersey text-5xl sm:text-6xl text-ink [text-shadow:3px_3px_0_#FFE89A] leading-tight">
+          <h1 className="font-jersey text-5xl sm:text-6xl text-ink [text-shadow:3px_3px_0_#FFD66B] leading-tight">
             Meowdow Study Farm
           </h1>
           <p className="font-press text-[9px] tracking-widest text-wood-dark mt-2">

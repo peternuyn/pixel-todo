@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import RoomCard from "@/components/rooms/RoomCard";
 import PasswordModal from "@/components/rooms/PasswordModal";
+import CreateRoomModal, { type CreateRoomData } from "@/components/rooms/CreateRoomModal";
 import { MOCK_ROOMS, type Room } from "@/lib/rooms";
 
 type Filter = "all" | "public" | "private";
@@ -16,6 +17,7 @@ export default function RoomsPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const visible = MOCK_ROOMS.filter((r) => {
     if (filter === "public" && r.isPrivate) return false;
@@ -38,16 +40,17 @@ export default function RoomsPage() {
     router.push(`/study-room?room=${pendingRoom!.id}`);
   }
 
+  function handleCreateRoom(data: CreateRoomData) {
+    // TODO: call POST /api/rooms with data
+    console.log("create room", data);
+    setShowCreate(false);
+  }
+
 
   return (
     <main
       className="relative min-h-screen px-7 pt-5 pb-24 z-[1]"
-      style={{ 
-        backgroundImage: `url(${Water.src})` ,
-        backgroundRepeat: 'repeat',
-        backgroundSize: 'auto',
-      }
-    }
+      style={{ backgroundColor: "#aee7bc" }}
 
     >
       <NavMenu />
@@ -57,7 +60,7 @@ export default function RoomsPage() {
         {/* Page heading + controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="font-jersey text-4xl text-ink [text-shadow:2px_2px_0_#FFE89A]">
+            <h1 className="font-jersey text-4xl text-ink [text-shadow:2px_2px_0_#FFD66B]">
               Study Rooms
             </h1>
             <p className="font-press text-[8px] text-ink/50 mt-1 tracking-widest">
@@ -65,14 +68,25 @@ export default function RoomsPage() {
             </p>
           </div>
 
-          {/* Search */}
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search rooms…"
-            className="bg-panel border-[3px] border-panel-stroke px-3 py-2 font-pixelify text-sm text-ink outline-none placeholder:text-ink/30 focus:border-grass-dark w-full sm:w-64"
-          />
+          <div className="flex gap-3 items-center">
+            {/* Create room button */}
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="tag active bg-sun hover:bg-sun-deep whitespace-nowrap"
+            >
+              + Create Room
+            </button>
+
+            {/* Search */}
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search rooms…"
+              className="bg-panel border-[3px] border-panel-stroke px-3 py-2 font-pixelify text-sm text-ink outline-none placeholder:text-ink/30 focus:border-grass-dark w-full sm:w-64"
+            />
+          </div>
         </div>
 
         {/* Filter tabs */}
@@ -110,6 +124,14 @@ export default function RoomsPage() {
           room={pendingRoom}
           onConfirm={handlePasswordConfirm}
           onClose={() => setPendingRoom(null)}
+        />
+      )}
+
+      {/* Create room modal */}
+      {showCreate && (
+        <CreateRoomModal
+          onConfirm={handleCreateRoom}
+          onClose={() => setShowCreate(false)}
         />
       )}
     </main>
