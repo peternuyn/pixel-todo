@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Water from "@/assets/gifs/water-background.gif";
 import Logo from "@/assets/logo.svg";
+import { userApi, ApiError } from "@/lib/api";
 
 type Mode = "login" | "register";
 
@@ -40,10 +41,19 @@ export default function LoginPage() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setLoading(true);
-    // TODO: replace with real API call
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    router.push("/rooms");
+    try {
+      const user = mode === "login"
+        ? await userApi.login(form.username, form.password)
+        : await userApi.register(form.username, form.displayName, form.password);
+
+      localStorage.setItem("user", JSON.stringify(user));
+      router.push("/rooms");
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Something went wrong";
+      setErrors((e) => ({ ...e, general: message }));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
