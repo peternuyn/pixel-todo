@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import catGif from "@/assets/gifs/meo-di-ve-phia-truoc-loop.gif";
-import cowGif from "@/assets/cow-walk.gif";
-import humanWalking2Gif from "@/assets/human-walking2.gif"
-import humanWalking1Gif from "@/assets/human-walking1.gif"
+import catGif from "@/assets/cat/cat-walk.gif";
+import cowGif from "@/assets/cow/cow-walk.gif";
+import humanWalking1Gif from "@/assets/human/human-walk.gif"
 import theme1 from "@/assets/theme-room1.svg";
 import theme2 from "@/assets/theme-room2.svg";
 import theme3 from "@/assets/theme-room3.svg";

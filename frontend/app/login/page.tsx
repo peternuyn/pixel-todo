@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Water from "@/assets/gifs/water-background.gif";
-import Logo from "@/assets/logo.svg";
+import Logo from "@/assets/logo2.svg";
 import { userApi, ApiError } from "@/lib/api";
 
 type Mode = "login" | "register";

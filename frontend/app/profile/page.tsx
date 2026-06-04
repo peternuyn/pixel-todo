@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Water from "@/assets/gifs/water-background.gif";
-import CatGifSrc from "@/assets/gifs/meo-di-ve-phia-truoc-loop.gif";
+import CatGifSrc from "@/assets/cat/cat-front.gif";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import { MOCK_USER } from "@/lib/user";

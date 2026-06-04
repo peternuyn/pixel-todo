@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import Water from "@/assets/gifs/water-background.gif";
-import Logo from "@/assets/logo.svg";
-import CatGifSrc from "@/assets/gifs/meo-di-ve-phia-truoc-loop.gif";
+import Logo from "@/assets/logo2.svg";
+import CatGifSrc from "@/assets/cat/cat-front.gif";
 
 const FEATURES = [
   { icon: "⏱️", title: "Focus Timer", desc: "Pomodoro-style timer to keep your sessions structured." },
