@@ -1,5 +1,10 @@
 package com.meowdow.studyfarm.room;
 
+import com.meowdow.studyfarm.membership.BelongRoom;
+import com.meowdow.studyfarm.membership.BelongRoomId;
+import com.meowdow.studyfarm.membership.BelongRoomRepository;
+import com.meowdow.studyfarm.tags.Tag;
+import com.meowdow.studyfarm.tags.TagService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,13 +19,19 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
     private final PasswordEncoder passwordEncoder;
+    // We depend on TagService (not TagRepository) so all the tag rules —
+    // normalising names, deduping, "get or create" — live in one place.
+    private final TagService tagService;
+    // Records who belongs to which room (the belong_room join table).
+    private final BelongRoomRepository belongRoomRepository;
 
     // -------------------------------------------------------------------------
     // Create
     // -------------------------------------------------------------------------
 
+    @Transactional
     public Room createRoom(UUID hostId, String name, String description, int capacity,
-                           boolean isPrivate, String rawPassword) {
+                           boolean isPrivate, String rawPassword, List<String> tagNames) {
         if (isPrivate && (rawPassword == null || rawPassword.isBlank())) {
             throw new IllegalArgumentException("Private rooms require a password");
         }
@@ -34,24 +45,54 @@ public class RoomService {
                 .passwordHash(isPrivate ? passwordEncoder.encode(rawPassword) : null)
                 .build();
 
-        return roomRepository.save(room);
+        // For each tag name the user typed, find the existing Tag or create a new
+        // one (getOrCreate), then link it to the room. This is how *users* create
+        // tags: simply by naming them when they make a room. The cascade on the
+        // Room.tags field means saving the room also saves these links.
+        if (tagNames != null) {
+            for (String tagName : tagNames) {
+                if (tagName != null && !tagName.isBlank()) {
+                    Tag tag = tagService.getOrCreate(tagName);
+                    room.addTag(tag);
+                }
+            }
+        }
+
+        Room saved = roomRepository.save(room);
+
+        // The host belongs to their own room with the 'host' role. We add the
+        // membership row and count the host as the first member.
+        belongRoomRepository.save(BelongRoom.of(hostId, saved.getRoomId(), "host"));
+        saved.incrementMembers();
+
+        return saved;
     }
 
     // -------------------------------------------------------------------------
     // Read
     // -------------------------------------------------------------------------
 
+    // These reads use the *WithTags queries so each room's tags are loaded in
+    // the same query — otherwise turning a Room into a RoomResponse (which reads
+    // room.getTags()) would fail once the DB session has closed.
+
     public Room getById(UUID roomId) {
-        return roomRepository.findById(roomId)
+        return roomRepository.findByIdWithTags(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
     }
 
     public List<Room> getPublicRooms() {
-        return roomRepository.findByStatusOrderByCreatedAtDesc(RoomStatus.PUBLIC);
+        return roomRepository.findByStatusWithTags(RoomStatus.PUBLIC);
+    }
+
+    // All rooms, public and private. Private rooms are shown in the listing so
+    // users can discover them, but joining still requires the room password.
+    public List<Room> getAllRooms() {
+        return roomRepository.findAllWithTags();
     }
 
     public List<Room> getRoomsByHost(UUID hostId) {
-        return roomRepository.findByHostId(hostId);
+        return roomRepository.findByHostIdWithTags(hostId);
     }
 
     // -------------------------------------------------------------------------
@@ -59,8 +100,15 @@ public class RoomService {
     // -------------------------------------------------------------------------
 
     @Transactional
-    public Room joinRoom(UUID roomId, String rawPassword) {
+    public Room joinRoom(UUID roomId, UUID userId, String rawPassword) {
         Room room = getById(roomId);
+
+        // Idempotent: if they're already in the room, don't add a duplicate
+        // membership or double-count. (PK is (user_id, room_id), so a second
+        // insert would fail anyway.)
+        if (belongRoomRepository.existsByIdUserIdAndIdRoomId(userId, roomId)) {
+            return room;
+        }
 
         if (room.isFull()) {
             throw new IllegalStateException("Room is full");
@@ -72,14 +120,22 @@ public class RoomService {
             }
         }
 
+        belongRoomRepository.save(BelongRoom.of(userId, roomId, "member"));
         room.incrementMembers();
         return room;
     }
 
     @Transactional
-    public Room leaveRoom(UUID roomId) {
+    public Room leaveRoom(UUID roomId, UUID userId) {
         Room room = getById(roomId);
-        room.decrementMembers();
+
+        // Only decrement if they were actually a member, so leaving twice (or
+        // leaving a room you never joined) can't push the counter negative.
+        BelongRoomId membershipId = new BelongRoomId(userId, roomId);
+        if (belongRoomRepository.existsById(membershipId)) {
+            belongRoomRepository.deleteById(membershipId);
+            room.decrementMembers();
+        }
         return room;
     }
 

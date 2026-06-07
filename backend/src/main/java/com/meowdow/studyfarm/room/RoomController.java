@@ -1,5 +1,6 @@
 package com.meowdow.studyfarm.room;
 
+import com.meowdow.studyfarm.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,11 +31,17 @@ public class RoomController {
             String description,
             @Positive int capacity,
             boolean isPrivate,
-            String password
+            String password,
+            List<String> tags
     ) {}
 
     record JoinRoomRequest(
+            @NotNull UUID userId,
             String password
+    ) {}
+
+    record LeaveRoomRequest(
+            @NotNull UUID userId
     ) {}
 
     record UpdateRoomRequest(
@@ -58,6 +65,7 @@ public class RoomController {
             String status,
             boolean isPrivate,
             boolean isFull,
+            List<String> tags,
             OffsetDateTime createdAt
     ) {
         static RoomResponse from(Room room) {
@@ -71,6 +79,9 @@ public class RoomController {
                     room.getStatus().name().toLowerCase(),
                     room.isPrivate(),
                     room.isFull(),
+                    // Convert the Set<Tag> into a simple list of tag-name strings,
+                    // which is all the frontend needs to display.
+                    room.getTags().stream().map(Tag::getName).sorted().toList(),
                     room.getCreatedAt()
             );
         }
@@ -85,14 +96,14 @@ public class RoomController {
     public RoomResponse createRoom(@Valid @RequestBody CreateRoomRequest req) {
         Room room = roomService.createRoom(
                 req.hostId(), req.name(), req.description(),
-                req.capacity(), req.isPrivate(), req.password()
+                req.capacity(), req.isPrivate(), req.password(), req.tags()
         );
         return RoomResponse.from(room);
     }
 
     @GetMapping
-    public List<RoomResponse> getPublicRooms() {
-        return roomService.getPublicRooms().stream()
+    public List<RoomResponse> getRooms() {
+        return roomService.getAllRooms().stream()
                 .map(RoomResponse::from)
                 .toList();
     }
@@ -112,15 +123,17 @@ public class RoomController {
     @PostMapping("/{roomId}/join")
     public RoomResponse joinRoom(
             @PathVariable UUID roomId,
-            @RequestBody(required = false) JoinRoomRequest req
+            @Valid @RequestBody JoinRoomRequest req
     ) {
-        String password = req != null ? req.password() : null;
-        return RoomResponse.from(roomService.joinRoom(roomId, password));
+        return RoomResponse.from(roomService.joinRoom(roomId, req.userId(), req.password()));
     }
 
     @PostMapping("/{roomId}/leave")
-    public RoomResponse leaveRoom(@PathVariable UUID roomId) {
-        return RoomResponse.from(roomService.leaveRoom(roomId));
+    public RoomResponse leaveRoom(
+            @PathVariable UUID roomId,
+            @Valid @RequestBody LeaveRoomRequest req
+    ) {
+        return RoomResponse.from(roomService.leaveRoom(roomId, req.userId()));
     }
 
     @PatchMapping("/{roomId}")
