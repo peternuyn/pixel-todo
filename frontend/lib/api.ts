@@ -55,6 +55,15 @@ export const userApi = {
   getById(userId: string) {
     return request<UserResponse>(`/api/users/${userId}`);
   },
+
+  // Update the editable parts of a profile (PATCH /api/users/{id}/profile).
+  // avatarUrl may be null to clear it.
+  updateProfile(userId: string, displayName: string, avatarUrl: string | null) {
+    return request<UserResponse>(`/api/users/${userId}/profile`, {
+      method: "PATCH",
+      body: JSON.stringify({ displayName, avatarUrl }),
+    });
+  },
 };
 
 // The logged-in user we saved at login (app/login/page.tsx stores it here).
