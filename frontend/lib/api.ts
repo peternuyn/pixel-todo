@@ -24,6 +24,7 @@ export type UserResponse = {
   userId: string;
   username: string;
   displayName: string;
+  bio: string;
   avatarUrl: string | null;
   petId: string | null;
   studyTimeSeconds: number;
@@ -57,12 +58,31 @@ export const userApi = {
   },
 
   // Update the editable parts of a profile (PATCH /api/users/{id}/profile).
-  // avatarUrl may be null to clear it.
-  updateProfile(userId: string, displayName: string, avatarUrl: string | null) {
+  // petId picks the user's avatar pet; a blank bio resets to the default.
+  updateProfile(userId: string, displayName: string, bio: string, petId: string | null) {
     return request<UserResponse>(`/api/users/${userId}/profile`, {
       method: "PATCH",
-      body: JSON.stringify({ displayName, avatarUrl }),
+      body: JSON.stringify({ displayName, bio, petId }),
     });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Pets (the avatar catalog)
+// ---------------------------------------------------------------------------
+
+// Mirrors the backend's PetController.PetResponse record.
+export type PetResponse = {
+  petId: string;
+  petName: string;
+  spriteKey: string; // e.g. "cat" -> assets/cat/cat-front.gif
+  description: string | null;
+};
+
+export const petApi = {
+  // The fixed catalog of choosable pets (GET /api/pets).
+  list() {
+    return request<PetResponse[]>("/api/pets");
   },
 };
 

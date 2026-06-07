@@ -123,7 +123,6 @@ export default function FarmScene() {
         style={{
           backgroundImage: `url(${waterBg.src})`,
           backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
         }}
       />
 
