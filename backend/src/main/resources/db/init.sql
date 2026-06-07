@@ -8,6 +8,7 @@ CREATE TABLE users (
     username       VARCHAR(32)  NOT NULL UNIQUE,
     display_name   VARCHAR(64)  NOT NULL,
     password_hash  TEXT         NOT NULL,
+    bio            TEXT         NOT NULL DEFAULT 'A cozy farm studier 🌾',
     avatar_url     TEXT,
     pet_id         UUID,                        -- FK added after pets table
     study_time_seconds  INT  NOT NULL DEFAULT 0,
