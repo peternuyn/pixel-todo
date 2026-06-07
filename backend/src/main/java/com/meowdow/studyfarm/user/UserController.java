@@ -37,7 +37,8 @@ public class UserController {
 
     record UpdateProfileRequest(
             @NotBlank @Size(max = 64) String displayName,
-            String avatarUrl
+            @Size(max = 280) String bio,
+            UUID petId
     ) {}
 
     record ChangePasswordRequest(
@@ -57,6 +58,7 @@ public class UserController {
             UUID userId,
             String username,
             String displayName,
+            String bio,
             String avatarUrl,
             UUID petId,
             int studyTimeSeconds,
@@ -72,6 +74,7 @@ public class UserController {
                     user.getUserId(),
                     user.getUsername(),
                     user.getDisplayName(),
+                    user.getBio(),
                     user.getAvatarUrl(),
                     user.getPetId(),
                     user.getStudyTimeSeconds(),
@@ -124,7 +127,7 @@ public class UserController {
             @PathVariable UUID userId,
             @Valid @RequestBody UpdateProfileRequest req
     ) {
-        User user = userService.updateProfile(userId, req.displayName(), req.avatarUrl());
+        User user = userService.updateProfile(userId, req.displayName(), req.bio(), req.petId());
         return UserResponse.from(user);
     }
 

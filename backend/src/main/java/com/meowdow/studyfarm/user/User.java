@@ -35,6 +35,13 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    // A short "about me" line. Everyone starts with the cozy default.
+    // @Builder.Default makes new users (built via the builder) get this value
+    // instead of null when bio isn't explicitly set.
+    @Column(name = "bio", nullable = false)
+    @Builder.Default
+    private String bio = "A cozy farm studier 🌾";
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 

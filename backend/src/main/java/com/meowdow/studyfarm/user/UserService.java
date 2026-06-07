@@ -1,5 +1,6 @@
 package com.meowdow.studyfarm.user;
 
+import com.meowdow.studyfarm.pet.PetRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +15,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    // Used to confirm a chosen pet actually exists before linking it to a user.
+    private final PetRepository petRepository;
 
     // -------------------------------------------------------------------------
     // Registration
@@ -71,10 +74,19 @@ public class UserService {
     // -------------------------------------------------------------------------
 
     @Transactional
-    public User updateProfile(UUID userId, String displayName, String avatarUrl) {
+    public User updateProfile(UUID userId, String displayName, String bio, UUID petId) {
         User user = getById(userId);
         user.setDisplayName(displayName);
-        user.setAvatarUrl(avatarUrl);
+        // Keep the cozy default rather than storing a blank bio.
+        user.setBio(bio == null || bio.isBlank() ? "A cozy farm studier 🌾" : bio);
+        // The user's avatar is their chosen pet, so updating the profile sets
+        // pet_id. Validate it exists first to avoid a broken foreign key.
+        if (petId != null) {
+            if (!petRepository.existsById(petId)) {
+                throw new IllegalArgumentException("Pet not found: " + petId);
+            }
+            user.setPetId(petId);
+        }
         return user;
     }
 
