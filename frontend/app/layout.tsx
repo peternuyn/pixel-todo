@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Press_Start_2P, VT323, Pixelify_Sans, Silkscreen, Jersey_10 } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
 
 const pressStart = Press_Start_2P({
   weight: "400",
@@ -51,7 +52,7 @@ export default function RootLayout({
       <body
         className={`${pressStart.variable} ${vt323.variable} ${pixelify.variable} ${silkscreen.variable} ${jersey.variable}`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
