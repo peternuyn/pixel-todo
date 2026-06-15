@@ -1,5 +1,5 @@
 
---   psql -U studyfarm -d studyfarm -f init.sql
+--   docker exec -i studyfarm-postgres psql -U studyfarm -d studyfarm 
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";  
 
@@ -75,6 +75,20 @@ CREATE TABLE sessions (
     duration_seconds  INT          -- computed/set when session ends
 );
 
+-- A room's SHARED to-do list. Every member sees the same rows; anyone in the
+-- room may add, tick, or delete a task. (The PERSONAL to-do list is NOT stored
+-- here — the frontend keeps that in the browser's localStorage.)
+-- ON DELETE CASCADE on room_id: deleting a room removes its tasks too.
+CREATE TABLE room_tasks (
+    task_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id      UUID         NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
+    created_by   UUID         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    title        VARCHAR(256) NOT NULL,
+    completed    BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ              -- NULL until the task is ticked off
+);
+
 
 
 
@@ -84,3 +98,4 @@ CREATE INDEX idx_belong_room_room   ON belong_room(room_id);
 CREATE INDEX idx_sessions_user      ON sessions(user_id);
 CREATE INDEX idx_sessions_room      ON sessions(room_id);
 CREATE INDEX idx_pets_sprite_key    ON pets(sprite_key);
+CREATE INDEX idx_room_tasks_room    ON room_tasks(room_id);
