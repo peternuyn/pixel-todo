@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { tagApi } from "@/lib/api";
 
 type Props = {
-  onConfirm: (data: CreateRoomData) => void;
+  onConfirm: (data: CreateRoomData) => void | Promise<void>;
   onClose: () => void;
+  serverError?: string | null;
 };
 
 export type CreateRoomData = {
@@ -16,9 +19,14 @@ export type CreateRoomData = {
   password: string;
 };
 
-const SUGGESTED_TAGS = ["focus", "silent", "chill", "coding", "math", "science", "language", "art", "study"];
+// Fallback suggestions shown even before any tags exist in the database.
+const DEFAULT_TAGS = ["focus", "silent", "chill", "coding", "math", "science", "language", "art", "study"];
 
-export default function CreateRoomModal({ onConfirm, onClose }: Props) {
+// Limits, kept in sync with the backend (Tag @Size(max=32), 5 tags per room).
+const MAX_TAGS = 5;
+const MAX_TAG_LENGTH = 32;
+
+export default function CreateRoomModal({ onConfirm, onClose, serverError }: Props) {
   const [form, setForm] = useState<CreateRoomData>({
     name: "",
     description: "",
@@ -29,8 +37,16 @@ export default function CreateRoomModal({ onConfirm, onClose }: Props) {
   });
   const [tagInput, setTagInput] = useState("");
   const [capacityInput, setCapacityInput] = useState("10");
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof CreateRoomData | "tagInput" | "capacityInput", string>>>({});
   const tagInputRef = useRef<HTMLInputElement>(null);
+
+  // Load tags that already exist in the database so we can suggest them.
+  // Cached by TanStack, so reopening the modal doesn't refetch within staleTime.
+  const { data: existingTags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: () => tagApi.list(),
+  });
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -50,7 +66,11 @@ export default function CreateRoomModal({ onConfirm, onClose }: Props) {
     const tag = raw.trim().toLowerCase().replace(/\s+/g, "-");
     if (!tag) return;
     if (form.tags.includes(tag)) { setTagInput(""); return; }
-    if (form.tags.length >= 5) { setErrors((e) => ({ ...e, tagInput: "Max 5 tags" })); return; }
+    if (form.tags.length >= MAX_TAGS) { setErrors((e) => ({ ...e, tagInput: `Max ${MAX_TAGS} tags` })); return; }
+    if (tag.length > MAX_TAG_LENGTH) {
+      setErrors((e) => ({ ...e, tagInput: `Tags can be up to ${MAX_TAG_LENGTH} characters` }));
+      return;
+    }
     setField("tags", [...form.tags, tag]);
     setTagInput("");
     setErrors((e) => ({ ...e, tagInput: undefined }));
@@ -99,14 +119,22 @@ export default function CreateRoomModal({ onConfirm, onClose }: Props) {
     return e;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
-    onConfirm(form);
+    setSubmitting(true);
+    try {
+      await onConfirm(form);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const unusedSuggestions = SUGGESTED_TAGS.filter((t) => !form.tags.includes(t));
+  // Merge the built-in defaults with tags from the DB (deduped), then drop any
+  // the user has already picked. Set keeps the order while removing duplicates.
+  const allSuggestions = [...new Set([...DEFAULT_TAGS, ...existingTags.map((t) => t.name)])];
+  const unusedSuggestions = allSuggestions.filter((t) => !form.tags.includes(t));
 
   return (
     <>
@@ -176,7 +204,7 @@ export default function CreateRoomModal({ onConfirm, onClose }: Props) {
           {/* Tags */}
           <div className="flex flex-col gap-1.5">
             <label className="font-press text-[8px] uppercase tracking-widest text-ink/70">
-              Tags <span className="text-ink/30">(up to 5)</span>
+              Tags <span className="text-ink/30">(up to {MAX_TAGS})</span>
             </label>
 
             {/* Tag chips + input in one box */}
@@ -201,16 +229,30 @@ export default function CreateRoomModal({ onConfirm, onClose }: Props) {
                   </button>
                 </span>
               ))}
-              {form.tags.length < 5 && (
-                <input
-                  ref={tagInputRef}
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => { setTagInput(e.target.value); setErrors((er) => ({ ...er, tagInput: undefined })); }}
-                  onKeyDown={handleTagKeyDown}
-                  placeholder={form.tags.length === 0 ? "Type and press Enter…" : ""}
-                  className="flex-1 min-w-[80px] bg-transparent font-pixelify text-sm text-ink outline-none placeholder:text-ink/30"
-                />
+              {form.tags.length < MAX_TAGS && (
+                <div className="flex flex-1 min-w-[80px] items-center gap-1">
+                  <input
+                    ref={tagInputRef}
+                    type="text"
+                    value={tagInput}
+                    maxLength={MAX_TAG_LENGTH}
+                    onChange={(e) => { setTagInput(e.target.value); setErrors((er) => ({ ...er, tagInput: undefined })); }}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder={form.tags.length === 0 ? "Type your own tag…" : ""}
+                    className="flex-1 min-w-[60px] bg-transparent font-pixelify text-sm text-ink outline-none placeholder:text-ink/30"
+                  />
+                  {/* "+" commits the typed tag, so users don't have to know
+                      about the Enter key. Disabled until something is typed. */}
+                  <button
+                    type="button"
+                    aria-label="Add tag"
+                    onClick={(e) => { e.stopPropagation(); addTag(tagInput); tagInputRef.current?.focus(); }}
+                    disabled={!tagInput.trim()}
+                    className="shrink-0 w-6 h-6 flex items-center justify-center border-[2px] border-panel-stroke bg-wood-light font-press text-[10px] text-ink hover:border-grass-dark disabled:opacity-30 active:translate-y-[1px]"
+                  >
+                    +
+                  </button>
+                </div>
               )}
             </div>
             {errors.tagInput && <p className="font-press text-[8px] text-barn">{errors.tagInput}</p>}
@@ -301,13 +343,22 @@ export default function CreateRoomModal({ onConfirm, onClose }: Props) {
             </div>
           )}
 
+          {/* Server error from the API */}
+          {serverError && (
+            <p className="font-press text-[8px] text-barn">{serverError}</p>
+          )}
+
           {/* Actions */}
           <div className="flex gap-2 justify-end mt-1">
-            <button type="button" onClick={onClose} className="tag">
+            <button type="button" onClick={onClose} className="tag" disabled={submitting}>
               Cancel
             </button>
-            <button type="submit" className="tag active bg-sun hover:bg-sun-deep">
-              Create Room →
+            <button
+              type="submit"
+              disabled={submitting}
+              className="tag active bg-sun hover:bg-sun-deep disabled:opacity-50"
+            >
+              {submitting ? "Creating…" : "Create Room →"}
             </button>
           </div>
         </form>
