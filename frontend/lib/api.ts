@@ -17,6 +17,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new ApiError(res.status, body.message ?? res.statusText);
   }
 
+  // 204 No Content (e.g. DELETE) has an empty body, so there's nothing to parse.
+  // Calling res.json() on it would throw, so return undefined instead.
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json() as Promise<T>;
 }
 
@@ -107,6 +113,7 @@ export function getStoredUser(): UserResponse | null {
 export type RoomResponse = {
   roomId: string;
   hostId: string;
+  hostName: string;
   name: string;
   description: string | null;
   capacity: number;
@@ -146,6 +153,62 @@ export const roomApi = {
   // Rooms a given user hosts (GET /api/rooms/host/{hostId}).
   listByHost(hostId: string) {
     return request<RoomResponse[]>(`/api/rooms/host/${hostId}`);
+  },
+
+  // Join a room (POST /api/rooms/{roomId}/join). This creates the membership
+  // (belong_room) row that lets the user use the room's shared features, and
+  // bumps the occupant count. It's idempotent: joining a room you're already in
+  // is a no-op. For private rooms, the backend verifies the password here.
+  join(roomId: string, userId: string, password?: string) {
+    return request<RoomResponse>(`/api/rooms/${roomId}/join`, {
+      method: "POST",
+      body: JSON.stringify({ userId, password: password ?? null }),
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Room tasks (the shared per-room to-do list)
+// ---------------------------------------------------------------------------
+
+// Mirrors the backend's RoomTaskController.RoomTaskResponse record.
+export type RoomTaskResponse = {
+  taskId: string;
+  roomId: string;
+  createdBy: string;
+  title: string;
+  completed: boolean;
+  createdAt: string;
+  completedAt: string | null;
+};
+
+export const roomTaskApi = {
+  // All tasks in a room, oldest first (GET /api/rooms/{roomId}/tasks).
+  list(roomId: string) {
+    return request<RoomTaskResponse[]>(`/api/rooms/${roomId}/tasks`);
+  },
+
+  // Add a task. userId must belong to the room (the backend checks this).
+  create(roomId: string, userId: string, title: string) {
+    return request<RoomTaskResponse>(`/api/rooms/${roomId}/tasks`, {
+      method: "POST",
+      body: JSON.stringify({ userId, title }),
+    });
+  },
+
+  // Tick / un-tick a task (PATCH .../tasks/{taskId}).
+  toggle(roomId: string, taskId: string, completed: boolean) {
+    return request<RoomTaskResponse>(`/api/rooms/${roomId}/tasks/${taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ completed }),
+    });
+  },
+
+  // Remove a task (DELETE .../tasks/{taskId}). Returns 204 No Content.
+  remove(roomId: string, taskId: string) {
+    return request<void>(`/api/rooms/${roomId}/tasks/${taskId}`, {
+      method: "DELETE",
+    });
   },
 };
 

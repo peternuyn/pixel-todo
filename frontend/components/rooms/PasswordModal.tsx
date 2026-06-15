@@ -7,9 +7,11 @@ type Props = {
   room: Room;
   onConfirm: (password: string) => void;
   onClose: () => void;
+  // An error from the server (e.g. wrong password), shown under the input.
+  serverError?: string | null;
 };
 
-export default function PasswordModal({ room, onConfirm, onClose }: Props) {
+export default function PasswordModal({ room, onConfirm, onClose, serverError }: Props) {
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +102,9 @@ export default function PasswordModal({ room, onConfirm, onClose }: Props) {
               <p className="font-press text-[8px] text-barn">
                 Please enter a password.
               </p>
+            )}
+            {!error && serverError && (
+              <p className="font-press text-[8px] text-barn">{serverError}</p>
             )}
           </div>
 

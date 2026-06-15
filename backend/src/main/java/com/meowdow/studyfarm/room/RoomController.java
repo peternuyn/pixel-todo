@@ -1,6 +1,8 @@
 package com.meowdow.studyfarm.room;
 
 import com.meowdow.studyfarm.tags.Tag;
+import com.meowdow.studyfarm.user.User;
+import com.meowdow.studyfarm.user.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class RoomController {
 
     private final RoomService roomService;
+    private final UserRepository userRepository;
 
     // -------------------------------------------------------------------------
     // DTOs
@@ -58,6 +61,7 @@ public class RoomController {
     record RoomResponse(
             UUID roomId,
             UUID hostId,
+            String hostName,
             String name,
             String description,
             int capacity,
@@ -68,10 +72,11 @@ public class RoomController {
             List<String> tags,
             OffsetDateTime createdAt
     ) {
-        static RoomResponse from(Room room) {
+        static RoomResponse from(Room room, String hostName) {
             return new RoomResponse(
                     room.getRoomId(),
                     room.getHostId(),
+                    hostName,
                     room.getName(),
                     room.getDescription(),
                     room.getCapacity(),
@@ -79,12 +84,26 @@ public class RoomController {
                     room.getStatus().name().toLowerCase(),
                     room.isPrivate(),
                     room.isFull(),
-                    // Convert the Set<Tag> into a simple list of tag-name strings,
-                    // which is all the frontend needs to display.
                     room.getTags().stream().map(Tag::getName).sorted().toList(),
                     room.getCreatedAt()
             );
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    // Turns a Room into the JSON shape we send back, looking up the host's
+    // username along the way. We don't store the name on the Room (only the
+    // host's UUID), so we ask the user table for it here. If the host can't be
+    // found for some reason, we fall back to a friendly placeholder instead of
+    // failing the whole request.
+    private RoomResponse toResponse(Room room) {
+        String hostName = userRepository.findById(room.getHostId())
+                .map(User::getUsername)
+                .orElse("Anonymous Farmer");
+        return RoomResponse.from(room, hostName);
     }
 
     // -------------------------------------------------------------------------
@@ -98,25 +117,25 @@ public class RoomController {
                 req.hostId(), req.name(), req.description(),
                 req.capacity(), req.isPrivate(), req.password(), req.tags()
         );
-        return RoomResponse.from(room);
+        return toResponse(room);
     }
 
     @GetMapping
     public List<RoomResponse> getRooms() {
         return roomService.getAllRooms().stream()
-                .map(RoomResponse::from)
+                .map(this::toResponse)
                 .toList();
     }
 
     @GetMapping("/{roomId}")
     public RoomResponse getRoom(@PathVariable UUID roomId) {
-        return RoomResponse.from(roomService.getById(roomId));
+        return toResponse(roomService.getById(roomId));
     }
 
     @GetMapping("/host/{hostId}")
     public List<RoomResponse> getRoomsByHost(@PathVariable UUID hostId) {
         return roomService.getRoomsByHost(hostId).stream()
-                .map(RoomResponse::from)
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -125,7 +144,7 @@ public class RoomController {
             @PathVariable UUID roomId,
             @Valid @RequestBody JoinRoomRequest req
     ) {
-        return RoomResponse.from(roomService.joinRoom(roomId, req.userId(), req.password()));
+        return toResponse(roomService.joinRoom(roomId, req.userId(), req.password()));
     }
 
     @PostMapping("/{roomId}/leave")
@@ -133,7 +152,7 @@ public class RoomController {
             @PathVariable UUID roomId,
             @Valid @RequestBody LeaveRoomRequest req
     ) {
-        return RoomResponse.from(roomService.leaveRoom(roomId, req.userId()));
+        return toResponse(roomService.leaveRoom(roomId, req.userId()));
     }
 
     @PatchMapping("/{roomId}")
@@ -144,7 +163,7 @@ public class RoomController {
         Room room = roomService.updateRoom(
                 roomId, req.requesterId(), req.name(), req.description(), req.capacity()
         );
-        return RoomResponse.from(room);
+        return toResponse(room);
     }
 
     @DeleteMapping("/{roomId}")

@@ -26,6 +26,7 @@ export default function RoomsPage() {
   const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   // Cached fetch of all rooms (GET /api/rooms). TanStack dedupes requests,
   // serves from cache between visits, and tracks loading/error for us.
@@ -54,18 +55,43 @@ export default function RoomsPage() {
     return true;
   });
 
-  function handleJoin(room: Room) {
-    if (room.isPrivate) {
-      setPendingRoom(room);
-    } else {
+  // Actually join the room on the backend before navigating. This creates the
+  // belong_room membership (so the user can use the shared to-do list etc.) and
+  // updates the occupant count. Idempotent, so re-entering a room is fine.
+  async function enterRoom(room: Room, password?: string) {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      setJoinError("You must be logged in to join a room.");
+      return;
+    }
+    const user = JSON.parse(stored) as UserResponse;
+
+    try {
+      await roomApi.join(room.id, user.userId, password);
+      // Refresh the rooms list so the new occupant count shows up.
+      queryClient.invalidateQueries({ queryKey: ROOMS_KEY });
+      setPendingRoom(null);
+      setJoinError(null);
       router.push(`/study-room?room=${room.id}`);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Failed to join room";
+      setJoinError(message);
     }
   }
 
-  function handlePasswordConfirm(_password: string) {
-    // In a real app, verify the password server-side before navigating.
-    setPendingRoom(null);
-    router.push(`/study-room?room=${pendingRoom!.id}`);
+  function handleJoin(room: Room) {
+    setJoinError(null);
+    if (room.isPrivate) {
+      // Private rooms need a password, collected by the modal.
+      setPendingRoom(room);
+    } else {
+      enterRoom(room);
+    }
+  }
+
+  function handlePasswordConfirm(password: string) {
+    // The backend verifies the password as part of joining.
+    enterRoom(pendingRoom!, password);
   }
 
   async function handleCreateRoom(data: CreateRoomData) {
@@ -157,6 +183,13 @@ export default function RoomsPage() {
           ))}
         </div>
 
+        {/* Join error (public rooms have no modal to show it in) */}
+        {joinError && !pendingRoom && (
+          <div className="panel mb-4 py-3 text-center">
+            <p className="font-press text-[10px] text-barn">{joinError}</p>
+          </div>
+        )}
+
         {/* Grid */}
         {loading ? (
           <div className="panel flex flex-col items-center gap-3 py-12 text-center">
@@ -175,9 +208,15 @@ export default function RoomsPage() {
           </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((room) => (
-              <RoomCard key={room.id} room={room} onJoin={handleJoin} />
-            ))}
+            {visible.map((room) => {
+              return (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  onJoin={handleJoin}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -187,7 +226,8 @@ export default function RoomsPage() {
         <PasswordModal
           room={pendingRoom}
           onConfirm={handlePasswordConfirm}
-          onClose={() => setPendingRoom(null)}
+          onClose={() => { setPendingRoom(null); setJoinError(null); }}
+          serverError={joinError}
         />
       )}
 

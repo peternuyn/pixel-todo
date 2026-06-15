@@ -11,6 +11,7 @@ export default function RoomCard({ room, onJoin }: Props) {
   const fillPct = Math.round((room.occupants / room.capacity) * 100);
   const isFull = room.occupants >= room.capacity;
 
+
   return (
     <div className="panel flex flex-col gap-3 rounded-3xl">
       {/* Header row */}
