@@ -95,13 +95,13 @@ public class RoomController {
     // -------------------------------------------------------------------------
 
     // Turns a Room into the JSON shape we send back, looking up the host's
-    // username along the way. We don't store the name on the Room (only the
+    // display name along the way. We don't store the name on the Room (only the
     // host's UUID), so we ask the user table for it here. If the host can't be
     // found for some reason, we fall back to a friendly placeholder instead of
     // failing the whole request.
     private RoomResponse toResponse(Room room) {
         String hostName = userRepository.findById(room.getHostId())
-                .map(User::getUsername)
+                .map(User::getDisplayName)
                 .orElse("Anonymous Farmer");
         return RoomResponse.from(room, hostName);
     }
