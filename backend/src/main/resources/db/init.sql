@@ -92,6 +92,30 @@ CREATE TABLE room_tasks (
 
 
 
+-- A room's SHARED Pomodoro clock. Exactly ONE row per room (room_id is the
+-- primary key), so the room "owns" a single clock everyone sees.
+--
+-- The clock is stored as a TIMESTAMP, not a ticking number: while it's running we
+-- record ends_at (the instant it will hit 00:00). Every client then computes
+-- remaining = ends_at - now on its own, so all clients agree without us streaming
+-- a per-second countdown over the network. remaining_seconds is only a snapshot
+-- used while the clock is idle or paused (when ends_at is meaningless).
+-- ON DELETE CASCADE: deleting a room removes its timer row too.
+CREATE TABLE room_timers (
+    room_id           UUID PRIMARY KEY REFERENCES rooms(room_id) ON DELETE CASCADE,
+    duration_seconds  INT          NOT NULL DEFAULT 1500,   -- configured length (25 min)
+    -- Stored UPPERCASE to match JPA's @Enumerated(STRING), which persists the enum
+    -- constant name (e.g. RoomTimerState.IDLE -> 'IDLE'). This mirrors how the
+    -- rooms.status column behaves with the RoomStatus enum.
+    state             VARCHAR(8)   NOT NULL DEFAULT 'IDLE'
+                       CHECK (state IN ('IDLE', 'RUNNING', 'PAUSED')),
+    ends_at           TIMESTAMPTZ,                          -- set only while running
+    remaining_seconds INT          NOT NULL DEFAULT 1500,   -- snapshot for idle/paused
+    updated_by        UUID         REFERENCES users(user_id) ON DELETE SET NULL,
+    updated_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+
 CREATE INDEX idx_rooms_host         ON rooms(host_id);
 CREATE INDEX idx_belong_room_user   ON belong_room(user_id);
 CREATE INDEX idx_belong_room_room   ON belong_room(room_id);

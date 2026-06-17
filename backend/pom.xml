@@ -42,6 +42,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<!--
+			Adds real-time, two-way messaging over WebSocket. We use it with STOMP
+			(a small text protocol on top of WebSocket) so the server can PUSH
+			updates to clients instead of clients having to poll. The shared room
+			timer, and later the chatbox + "user joined" pop-ups, all ride on this.
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>

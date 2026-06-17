@@ -182,6 +182,14 @@ export type RoomTaskResponse = {
   completedAt: string | null;
 };
 
+// Mirrors RoomTaskController.TaskEvent — the WebSocket push payload.
+// Discriminated union on `type`:
+//   created / updated → task is the full row, taskId mirrors task.taskId
+//   deleted           → task is null,         taskId is the removed row's id
+export type TaskEvent =
+  | { type: "created" | "updated"; task: RoomTaskResponse; taskId: string }
+  | { type: "deleted"; task: null; taskId: string };
+
 export const roomTaskApi = {
   // All tasks in a room, oldest first (GET /api/rooms/{roomId}/tasks).
   list(roomId: string) {
@@ -208,6 +216,65 @@ export const roomTaskApi = {
   remove(roomId: string, taskId: string) {
     return request<void>(`/api/rooms/${roomId}/tasks/${taskId}`, {
       method: "DELETE",
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Room timer (the shared per-room Pomodoro clock)
+// ---------------------------------------------------------------------------
+
+// Mirrors the backend's RoomTimerResponse record. The same shape arrives two
+// ways: as the reply to these REST calls, and as a live WebSocket push on
+// /topic/rooms/{roomId}/timer. `endsAt` lets the UI run a smooth local countdown
+// while RUNNING; `remainingSeconds` is what to show while IDLE/PAUSED.
+export type RoomTimerResponse = {
+  roomId: string;
+  state: "IDLE" | "RUNNING" | "PAUSED";
+  durationSeconds: number;
+  remainingSeconds: number;
+  endsAt: string | null;
+  updatedBy: string | null;
+  updatedAt: string;
+  completed: boolean; // true only on the one push sent when a clock hits 00:00
+};
+
+export const roomTimerApi = {
+  // Current clock state (GET). Used on first load / reconnect to sync before live
+  // WebSocket pushes take over.
+  get(roomId: string) {
+    return request<RoomTimerResponse>(`/api/rooms/${roomId}/timer`);
+  },
+
+  // Set the clock length in seconds (PATCH). 15/25/35-min presets or custom.
+  setDuration(roomId: string, userId: string, durationSeconds: number) {
+    return request<RoomTimerResponse>(`/api/rooms/${roomId}/timer`, {
+      method: "PATCH",
+      body: JSON.stringify({ userId, durationSeconds }),
+    });
+  },
+
+  // Start / resume the clock (POST). userId must be a room member.
+  start(roomId: string, userId: string) {
+    return request<RoomTimerResponse>(`/api/rooms/${roomId}/timer/start`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+  },
+
+  // Pause the clock (POST).
+  pause(roomId: string, userId: string) {
+    return request<RoomTimerResponse>(`/api/rooms/${roomId}/timer/pause`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+  },
+
+  // Reset to the full configured length and stop (POST).
+  reset(roomId: string, userId: string) {
+    return request<RoomTimerResponse>(`/api/rooms/${roomId}/timer/reset`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
     });
   },
 };

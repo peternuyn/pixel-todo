@@ -23,7 +23,7 @@ export default async function Home({
         <StudyRoom />
 
         <aside className="flex flex-col gap-4 w-full">
-          <Timer initialSeconds={24 * 60 + 32} />
+          <Timer roomId={room ?? null} />
           <Todo roomId={room ?? null} />
           <Chat />
         </aside>
