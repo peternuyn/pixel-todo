@@ -19,13 +19,13 @@ export default async function Home({
       <NavMenu />
       <Header />
 
-      <div className="grid gap-3 max-w-[1240px] mx-auto grid-cols-1 lg:[grid-template-columns:minmax(0,2.2fr)_minmax(280px,1fr)]">
+      <div className="grid gap-3 items-start max-w-[1240px] mx-auto grid-cols-1 lg:[grid-template-columns:minmax(0,2.2fr)_minmax(280px,1fr)]">
         <StudyRoom />
 
         <aside className="flex flex-col gap-4 w-full">
           <Timer roomId={room ?? null} />
           <Todo roomId={room ?? null} />
-          <Chat />
+          <Chat roomId={room ?? null} />
         </aside>
       </div>
     </main>

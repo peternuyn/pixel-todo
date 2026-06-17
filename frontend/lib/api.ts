@@ -221,6 +221,61 @@ export const roomTaskApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Room chat (the shared per-room message log)
+// ---------------------------------------------------------------------------
+
+// Mirrors the backend's RoomMessageController.ChatMessageResponse record.
+// `reactions` maps an emoji to the list of user ids who reacted with it, so the
+// UI can show counts (array length) AND highlight the current user's own
+// reactions (array.includes(myUserId)) without an extra request.
+export type ChatMessageResponse = {
+  messageId: string;
+  roomId: string;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  content: string;
+  createdAt: string;
+  reactions: Record<string, string[]>; // emoji -> [userId, ...]
+};
+
+// Mirrors RoomMessageController.ChatEvent — the WebSocket push payload.
+// Discriminated union on `type`:
+//   created  → message is the full new row, reactions null
+//   reaction → message is null, messageId + reactions give the changed message's
+//              fresh reaction state
+export type ChatEvent =
+  | { type: "created"; message: ChatMessageResponse; messageId: string; reactions: null }
+  | { type: "reaction"; message: null; messageId: string; reactions: Record<string, string[]> };
+
+export const roomMessageApi = {
+  // The whole chat log, oldest first (GET /api/rooms/{roomId}/messages).
+  list(roomId: string) {
+    return request<ChatMessageResponse[]>(`/api/rooms/${roomId}/messages`);
+  },
+
+  // Send a message. userId must belong to the room (the backend checks this).
+  send(roomId: string, userId: string, content: string) {
+    return request<ChatMessageResponse>(`/api/rooms/${roomId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ userId, content }),
+    });
+  },
+
+  // Toggle an emoji reaction on a message. Adds it if missing, removes it if the
+  // user already reacted with that emoji. Returns the message's fresh reaction map.
+  toggleReaction(roomId: string, messageId: string, userId: string, emoji: string) {
+    return request<Record<string, string[]>>(
+      `/api/rooms/${roomId}/messages/${messageId}/reactions`,
+      {
+        method: "POST",
+        body: JSON.stringify({ userId, emoji }),
+      }
+    );
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Room timer (the shared per-room Pomodoro clock)
 // ---------------------------------------------------------------------------
 

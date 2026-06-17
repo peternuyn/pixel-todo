@@ -44,10 +44,24 @@
     box-shadow: 0 3px 0 0 #173E2B;
   }
   .tag.active { @apply bg-sun; }
+  /* Hover feedback: a gentle lift so buttons feel alive before the click. */
+  .tag:hover { @apply bg-sun-deep; }
+  .tag.active:hover { filter: brightness(1.04); }
   .tag:active {
     transform: translateY(2px);
     box-shadow: 0 1px 0 0 #173E2B;
   }
+
+  /* Themed thin scrollbar — used by the chat message list so the scroll track
+     matches the mint/leaf palette instead of the default grey OS bar. */
+  .scroll-leaf { scrollbar-width: thin; scrollbar-color: #6FC68C transparent; }
+  .scroll-leaf::-webkit-scrollbar { width: 8px; }
+  .scroll-leaf::-webkit-scrollbar-track { background: transparent; }
+  .scroll-leaf::-webkit-scrollbar-thumb {
+    background: #6FC68C;
+    border: 2px solid #F1FBF3;
+  }
+  .scroll-leaf::-webkit-scrollbar-thumb:hover { background: #4E9D6C; }
 
   /* Workspace monitor frame: outer bezel + inner CRT border */
   .stage-frame {
@@ -106,6 +120,24 @@
       0 0 0 4px rgba(255, 214, 107, 0.45),
       0 0 0 10px rgba(255, 214, 107, 0.22);
   }
+}
+
+/*
+ * Accessible keyboard focus ring — a hard butter-yellow outline that fits the
+ * pixel theme. It only appears for KEYBOARD users (:focus-visible), so mouse
+ * users with the cat-paw cursor never see it, but tabbing through controls now
+ * has a clear, consistent indicator. Unlayered so it wins over Tailwind resets.
+ */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+.tag:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #FFD66B;
+  outline-offset: 2px;
 }
 
 /*

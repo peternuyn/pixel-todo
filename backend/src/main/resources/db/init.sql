@@ -90,6 +90,31 @@ CREATE TABLE room_tasks (
 );
 
 
+-- A room's CHAT LOG. One row per message, in the room everyone shares. Like
+-- room_tasks, ownership/links are raw UUIDs, and ON DELETE CASCADE means deleting
+-- a room (or a user) sweeps away their messages too — no orphan rows left behind.
+CREATE TABLE room_messages (
+    message_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id     UUID         NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
+    user_id     UUID         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    content     TEXT         NOT NULL,    -- free text; image URLs/links are rendered by the frontend
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Emoji REACTIONS on a message. The primary key is the TRIPLE (message, user,
+-- emoji) — the same "composite key" idea as belong_room(user_id, room_id). It
+-- lets one user react to a message with 👍 AND ❤️, but stops them adding the SAME
+-- emoji twice (the DB rejects a duplicate (message,user,emoji) row). We store who
+-- reacted (user_id) so the UI can show counts and highlight your own reactions.
+CREATE TABLE message_reactions (
+    message_id UUID        NOT NULL REFERENCES room_messages(message_id) ON DELETE CASCADE,
+    user_id    UUID        NOT NULL REFERENCES users(user_id)            ON DELETE CASCADE,
+    emoji      VARCHAR(16) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (message_id, user_id, emoji)
+);
+
+
 
 
 -- A room's SHARED Pomodoro clock. Exactly ONE row per room (room_id is the
@@ -123,3 +148,7 @@ CREATE INDEX idx_sessions_user      ON sessions(user_id);
 CREATE INDEX idx_sessions_room      ON sessions(room_id);
 CREATE INDEX idx_pets_sprite_key    ON pets(sprite_key);
 CREATE INDEX idx_room_tasks_room    ON room_tasks(room_id);
+-- Chat: list a room's messages oldest-first quickly (room_id + created_at), and
+-- look up all reactions for a message fast.
+CREATE INDEX idx_room_messages_room    ON room_messages(room_id, created_at);
+CREATE INDEX idx_message_reactions_msg ON message_reactions(message_id);
