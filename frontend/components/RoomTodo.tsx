@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { roomTaskApi, getStoredUser, ApiError } from "@/lib/api";
+import { roomTaskApi, RoomTaskResponse, TaskEvent, getStoredUser, ApiError } from "@/lib/api";
+import { subscribeRoom } from "@/lib/ws";
 import TodoRow from "./TodoRow";
 
 // The SHARED to-do list for one room. It's backed by the API, so every member
@@ -27,9 +28,21 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
     enabled: !!roomId, // don't fetch until we actually have a room
   });
 
-  // Shared success/error handling for the mutations below.
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: tasksKey });
+  // Live updates: subscribe to /topic/rooms/{roomId}/tasks. The server broadcasts
+  // a TaskEvent after every create/toggle/delete, so we apply the delta directly
+  // to the TanStack Query cache — no refetch round-trip needed.
+  useEffect(() => {
+    if (!roomId) return;
+    return subscribeRoom<TaskEvent>(roomId, "tasks", (event) => {
+      queryClient.setQueryData<RoomTaskResponse[]>(tasksKey, (old = []) => {
+        if (event.type === "created") return [...old, event.task];
+        if (event.type === "updated") return old.map((t) => t.taskId === event.task.taskId ? event.task : t);
+        if (event.type === "deleted") return old.filter((t) => t.taskId !== event.taskId);
+        return old;
+      });
+    });
+  }, [roomId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const showError = (err: unknown, fallback: string) =>
     setError(err instanceof ApiError ? err.message : fallback);
 
@@ -38,7 +51,8 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
     onSuccess: () => {
       setDraft("");
       setError(null);
-      refresh();
+      // No invalidateQueries — the broadcast from the server will update the cache
+      // for everyone (including this user) via the subscription above.
     },
     onError: (err) => showError(err, "Failed to add task"),
   });
@@ -46,13 +60,11 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
   const toggleTask = useMutation({
     mutationFn: ({ taskId, completed }: { taskId: string; completed: boolean }) =>
       roomTaskApi.toggle(roomId!, taskId, completed),
-    onSuccess: refresh,
     onError: (err) => showError(err, "Failed to update task"),
   });
 
   const removeTask = useMutation({
     mutationFn: (taskId: string) => roomTaskApi.remove(roomId!, taskId),
-    onSuccess: refresh,
     onError: (err) => showError(err, "Failed to delete task"),
   });
 

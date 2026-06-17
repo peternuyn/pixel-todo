@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -29,6 +30,9 @@ import java.util.UUID;
 public class RoomTaskController {
 
     private final RoomTaskService roomTaskService;
+    // Used to push task changes to everyone in the room over WebSocket.
+    // Destination: /topic/rooms/{roomId}/tasks
+    private final SimpMessagingTemplate messagingTemplate;
 
     // -------------------------------------------------------------------------
     // DTOs
@@ -47,6 +51,23 @@ public class RoomTaskController {
     record ToggleTaskRequest(
             boolean completed
     ) {}
+
+    /**
+     * The WebSocket push payload. Every subscriber on /topic/rooms/{id}/tasks
+     * receives one of these after any mutation.
+     *
+     * type = "created" | "updated" | "deleted"
+     *   - created / updated: `task` holds the full task, `taskId` mirrors task.taskId()
+     *   - deleted:           `task` is null,              `taskId` is the removed id
+     *
+     * Keeping a top-level `taskId` on every event lets the frontend identify
+     * which row to touch without null-checking `task` first.
+     */
+    record TaskEvent(String type, RoomTaskResponse task, UUID taskId) {
+        static TaskEvent created(RoomTaskResponse t) { return new TaskEvent("created", t, t.taskId()); }
+        static TaskEvent updated(RoomTaskResponse t) { return new TaskEvent("updated", t, t.taskId()); }
+        static TaskEvent deleted(UUID id)            { return new TaskEvent("deleted", null, id); }
+    }
 
     /** What every task looks like when we send it back to the frontend. */
     record RoomTaskResponse(
@@ -91,8 +112,10 @@ public class RoomTaskController {
             @PathVariable UUID roomId,
             @Valid @RequestBody CreateTaskRequest req
     ) {
-        RoomTask task = roomTaskService.createTask(roomId, req.userId(), req.title());
-        return RoomTaskResponse.from(task);
+        RoomTaskResponse response = RoomTaskResponse.from(
+                roomTaskService.createTask(roomId, req.userId(), req.title()));
+        broadcast(roomId, TaskEvent.created(response));
+        return response;
     }
 
     /**
@@ -106,7 +129,10 @@ public class RoomTaskController {
             @PathVariable UUID taskId,
             @Valid @RequestBody ToggleTaskRequest req
     ) {
-        return RoomTaskResponse.from(roomTaskService.setCompleted(taskId, req.completed()));
+        RoomTaskResponse response = RoomTaskResponse.from(
+                roomTaskService.setCompleted(taskId, req.completed()));
+        broadcast(roomId, TaskEvent.updated(response));
+        return response;
     }
 
     /**
@@ -120,5 +146,11 @@ public class RoomTaskController {
             @PathVariable UUID taskId
     ) {
         roomTaskService.deleteTask(taskId);
+        broadcast(roomId, TaskEvent.deleted(taskId));
+    }
+
+    /** Push a task change to every subscriber in the room. */
+    private void broadcast(UUID roomId, TaskEvent event) {
+        messagingTemplate.convertAndSend("/topic/rooms/" + roomId + "/tasks", event);
     }
 }
