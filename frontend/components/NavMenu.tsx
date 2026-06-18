@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type Item = { label: string; icon: string; href: string };
+import Image, { type StaticImageData } from "next/image";
+import homeIcon from "@/assets/menu/home.svg"
+import profileIcon from "@/assets/menu/profile.svg"
+import roomsIcon from "@/assets/menu/rooms.svg"
+import signoutIcon from "@/assets/menu/signout.svg"
+type Item = { label: string; icon: StaticImageData; href: string };
 
 const ITEMS: Item[] = [
-  { label: "Home", icon: "🏠", href: "/" },
-  { label: "Rooms", icon: "🌿", href: "/rooms" },
-  { label: "Profile", icon: "😺", href: "/profile" },
-  { label: "Sign out", icon: "🚪", href: "/login" },
+  { label: "Home", icon: homeIcon, href: "/" },
+  { label: "Rooms", icon: roomsIcon, href: "/rooms" },
+  { label: "Profile", icon: profileIcon, href: "/profile" },
+  { label: "Sign out", icon: signoutIcon, href: "/login" },
 ];
 
 export default function NavMenu() {
@@ -70,7 +74,7 @@ export default function NavMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-3 py-3 border-[3px] border-panel-stroke bg-wood-light font-pixelify text-lg text-ink hover:bg-sun active:translate-y-[2px] active:shadow-none shadow-pixel-sm"
             >
-              <span className="text-xl">{item.icon}</span>
+              <Image src={item.icon} alt="" className="w-10 h-10" />
               <span>{item.label}</span>
             </a>
           ))}
