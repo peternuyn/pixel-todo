@@ -50,7 +50,13 @@ export default function RoomTimer({ roomId }: { roomId: string | null }) {
     if (!snap) return;
     setDisplaySeconds(remainingNow(snap));
     if (snap.state !== "RUNNING") return; // only a running clock needs ticking
-    const id = setInterval(() => setDisplaySeconds(remainingNow(snap)), 250);
+    const id = setInterval(() => {
+      const left = remainingNow(snap);
+      setDisplaySeconds(left);
+      // Hit zero locally — stop ticking and wait for the server's completion
+      // push (the authoritative state) rather than spinning at 00:00.
+      if (left <= 0) clearInterval(id);
+    }, 250);
     return () => clearInterval(id);
   }, [snap]);
 

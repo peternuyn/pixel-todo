@@ -41,8 +41,11 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
 
   const activeTheme = THEMES.find((t) => t.id === themeId)!;
 
-  // Caches to avoid re-fetching on every useEffect.
+  // Cache to avoid re-fetching on every useEffect.
   const petMapRef = useRef<Map<string, string> | null>(null);
+  // Users who left (via a live presence event) while the initial snapshot is
+  // still in flight, so a late-resolving snapshot can't resurrect them.
+  const departedRef = useRef<Set<string>>(new Set());
 
   const stageRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
@@ -70,6 +73,9 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
     }
 
     let active = true;
+    // New room: start clean and forget any "left while loading" tracking.
+    setWalkers([]);
+    departedRef.current = new Set();
 
     (async () => {
       try {
@@ -85,11 +91,6 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
         const presentIds = await roomPresenceApi.snapshot(roomId);
         if (!active) return;
 
-        if (presentIds.length === 0) {
-          setWalkers([]);
-          return;
-        }
-
         // Load user data for each present user in parallel, then build the walker list.
         const walkerPromises = presentIds.map(async (userId) => {
           const user = await userApi.getById(userId);
@@ -104,9 +105,19 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
           };
         });
         const loadedWalkers = await Promise.all(walkerPromises);
-        if (active) {
-          setWalkers(loadedWalkers);
-        }
+        if (!active) return;
+
+        // Merge the snapshot in WITHOUT clobbering walkers that live presence
+        // events added while we were loading, and without resurrecting anyone
+        // who left in that window.
+        setWalkers((prev) => {
+          const byId = new Map(prev.map((w) => [w.userId, w]));
+          for (const w of loadedWalkers) {
+            if (departedRef.current.has(w.userId)) continue;
+            if (!byId.has(w.userId)) byId.set(w.userId, w);
+          }
+          return Array.from(byId.values());
+        });
       } catch (err) {
         // Silently fail — the farm degrades to decorative mode with no dynamic pets.
         console.error("[FarmScene] Failed to load presence walkers:", err);
@@ -126,6 +137,8 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
       if (event.type === "join") {
         // Someone joined. Fetch their user data asynchronously.
         if (!event.userId) return;
+        // No longer "departed" — clear it so a pending snapshot keeps them.
+        departedRef.current.delete(event.userId);
 
         userApi.getById(event.userId)
           .then((user) => {
@@ -150,6 +163,9 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
             console.error("[FarmScene] Failed to fetch user", event.userId, err);
           });
       } else if (event.type === "leave") {
+        // Remember the departure in case the initial snapshot (which may have
+        // captured them as present) is still loading.
+        departedRef.current.add(event.userId);
         setWalkers((prev) => prev.filter((w) => w.userId !== event.userId));
       }
     });
@@ -253,21 +269,18 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
           />
 
           {/* Pets — positioned relative to the hills tile */}
-          {roomId && walkers.length > 0 && (
-            walkers.map((w) => (
-              <WalkingPet
-                key={w.userId}
-                src={w.walkSrc}
-                name={w.displayName}
-                top={w.top}
-                width="12%"
-                speed={w.speed}
-                minX={10}
-                maxX={95}
-              />
-            ))
-          )}
-        
+          {walkers.map((w) => (
+            <WalkingPet
+              key={w.userId}
+              src={w.walkSrc}
+              name={w.displayName}
+              top={w.top}
+              width="12%"
+              speed={w.speed}
+              minX={10}
+              maxX={95}
+            />
+          ))}
         </div>
       </div>
 

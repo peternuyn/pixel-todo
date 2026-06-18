@@ -55,7 +55,12 @@ export default function WalkingPet({ src, name, top, width, speed = 6, minX = 0,
     };
 
     rafRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      // Forget the last frame time so a restart (props changed) doesn't compute
+      // a huge dt from a stale timestamp and teleport the pet.
+      lastTimeRef.current = null;
+    };
   }, [speed, width, minX, maxX]);
 
   const [hover, setHover] = useState(false);

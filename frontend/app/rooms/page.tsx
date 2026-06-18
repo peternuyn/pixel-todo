@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Water from "@/assets/gifs/water-background.gif";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import RoomCard from "@/components/rooms/RoomCard";
 import PasswordModal from "@/components/rooms/PasswordModal";
 import CreateRoomModal, { type CreateRoomData } from "@/components/rooms/CreateRoomModal";
 import { toRoom, type Room } from "@/lib/rooms";
-import { roomApi, ApiError, type CreateRoomRequest, type UserResponse } from "@/lib/api";
+import { roomApi, ApiError, getStoredUser, type CreateRoomRequest } from "@/lib/api";
 
 type Filter = "all" | "public" | "private";
 
@@ -59,12 +58,11 @@ export default function RoomsPage() {
   // belong_room membership (so the user can use the shared to-do list etc.) and
   // updates the occupant count. Idempotent, so re-entering a room is fine.
   async function enterRoom(room: Room, password?: string) {
-    const stored = localStorage.getItem("user");
-    if (!stored) {
+    const user = getStoredUser();
+    if (!user) {
       setJoinError("You must be logged in to join a room.");
       return;
     }
-    const user = JSON.parse(stored) as UserResponse;
 
     try {
       await roomApi.join(room.id, user.userId, password);
@@ -98,12 +96,11 @@ export default function RoomsPage() {
     setCreateError(null);
 
     // hostId comes from the user we saved at login (see app/login/page.tsx).
-    const stored = localStorage.getItem("user");
-    if (!stored) {
+    const user = getStoredUser();
+    if (!user) {
       setCreateError("You must be logged in to create a room.");
       return;
     }
-    const user = JSON.parse(stored) as UserResponse;
 
     try {
       // Tags typed in the modal are sent as names; the backend creates any that

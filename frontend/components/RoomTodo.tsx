@@ -35,7 +35,12 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
     if (!roomId) return;
     return subscribeRoom<TaskEvent>(roomId, "tasks", (event) => {
       queryClient.setQueryData<RoomTaskResponse[]>(tasksKey, (old = []) => {
-        if (event.type === "created") return [...old, event.task];
+        if (event.type === "created") {
+          // Guard against the rare duplicate (e.g. a reconnect replay) so we
+          // don't end up with two rows sharing the same taskId/React key.
+          if (old.some((t) => t.taskId === event.task.taskId)) return old;
+          return [...old, event.task];
+        }
         if (event.type === "updated") return old.map((t) => t.taskId === event.task.taskId ? event.task : t);
         if (event.type === "deleted") return old.filter((t) => t.taskId !== event.taskId);
         return old;
