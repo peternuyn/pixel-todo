@@ -288,8 +288,8 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
                 name="Mai Linh"
                 className="top-[44%] left-[55%] -translate-x-1/2 -translate-y-1/2 w-[18%]"
               />
-              <WalkingPet src={cowGif} name="Bò" top="38%" width="12%" speed={10} minX={10} maxX={95} />
-              <WalkingPet src={humanWalking1Gif} name="Thanh" top="38%" width="7%" speed={6} minX={10} maxX={95}/>
+              <WalkingPet src={cowGif} name="Bò" top="30%" width="12%" speed={10} minX={10} maxX={95} />
+              <WalkingPet src={humanWalking1Gif} name="Thanh" top="30%" width="7%" speed={6} minX={10} maxX={95}/>
             </>
           )}
         </div>

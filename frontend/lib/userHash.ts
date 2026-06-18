@@ -3,12 +3,12 @@
 // appears at the same height and moves at the same speed when that user joins.
 
 export function userTopPercent(userId: string): number {
-  // Hash userId to a value 0-1, then map to vertical range (25%-55%).
-  // Wider spread so pets don't stack on top of each other.
+  // Hash userId to a value 0-1, then map to vertical range (15%-45%).
+  // Higher up on screen so pets stay above the brown ground area.
   const hash = hashString(userId);
   // Normalize hash to 0-1 by using modulo to get fractional part
   const normalized = (hash % 1000) / 1000;
-  return 25 + normalized * 30; // 25% to 55%
+  return 15 + normalized * 30; // 15% to 45%
 }
 
 export function userWalkSpeed(userId: string): number {
