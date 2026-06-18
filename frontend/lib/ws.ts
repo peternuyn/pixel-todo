@@ -43,6 +43,7 @@ function getClient(): Client {
 
   // On every (re)connect, (re)subscribe everything in the registry.
   c.onConnect = () => {
+    console.log("[WS] Client connected! Re-subscribing to", registry.size, "topics");
     registry.forEach((entry) => {
       entry.sub = c.subscribe(
         entry.topic,
@@ -59,8 +60,13 @@ function getClient(): Client {
 
 function deliver(entry: Registered, msg: IMessage) {
   try {
-    entry.onMessage(JSON.parse(msg.body));
-  } catch {
+    const data = JSON.parse(msg.body);
+    console.log("[WS] Delivering message to", entry.topic, ":", data);
+    console.log("[WS] Calling callback for", entry.topic);
+    entry.onMessage(data);
+    console.log("[WS] Callback completed for", entry.topic);
+  } catch (err) {
+    console.error("[WS] Failed to deliver message to", entry.topic, ":", err);
     // Ignore malformed frames rather than crash the UI.
   }
 }
@@ -80,8 +86,11 @@ export function subscribeRoom<T>(
   onMessage: (data: T) => void
 ): () => void {
   const c = getClient();
+  const topic = `/topic/rooms/${roomId}/${channel}`;
+  console.log("[WS] subscribeRoom called:", topic, "connected:", c.connected);
+
   const entry: Registered = {
-    topic: `/topic/rooms/${roomId}/${channel}`,
+    topic,
     headers: userHeaders(),
     onMessage: onMessage as (data: unknown) => void,
     sub: null,
@@ -90,14 +99,19 @@ export function subscribeRoom<T>(
 
   // If we're already connected, subscribe right away; otherwise onConnect will.
   if (c.connected) {
+    console.log("[WS] Client connected, subscribing to", topic);
     entry.sub = c.subscribe(
-      entry.topic,
+      topic,
       (msg: IMessage) => deliver(entry, msg),
       entry.headers
     );
+    console.log("[WS] Subscribed:", entry.sub?.id);
+  } else {
+    console.log("[WS] Client not connected yet, will subscribe on onConnect");
   }
 
   return () => {
+    console.log("[WS] Unsubscribing from", topic);
     entry.sub?.unsubscribe();
     registry.delete(entry);
   };

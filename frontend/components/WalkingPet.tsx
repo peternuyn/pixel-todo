@@ -1,6 +1,6 @@
 "use client";
 
-import Image, { type StaticImageData } from "next/image";
+import { type StaticImageData } from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -68,10 +68,9 @@ export default function WalkingPet({ src, name, top, width, speed = 6, minX = 0,
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        <Image
-          src={src}
+        <img
+          src={typeof src === "string" ? src : src.src}
           alt={name ?? ""}
-          unoptimized
           className={`w-full h-auto [image-rendering:pixelated] cursor-pointer ${facingRight ? "" : "-scale-x-100"}`}
         />
         {name && (

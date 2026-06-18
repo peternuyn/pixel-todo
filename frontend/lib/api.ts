@@ -276,6 +276,27 @@ export const roomMessageApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Room presence (who is currently in the room)
+// ---------------------------------------------------------------------------
+
+// Mirrors the backend's PresenceEvent — fired when someone joins or leaves.
+// Discriminated union on `type`.
+export type PresenceEvent = {
+  type: "join" | "leave";
+  roomId: string;
+  userId: string;
+  presentCount: number;
+};
+
+export const roomPresenceApi = {
+  // Snapshot of who is currently in the room (GET /api/rooms/{roomId}/presence).
+  // Returns an array of user IDs. Used on FarmScene mount to bootstrap the pet list.
+  snapshot(roomId: string) {
+    return request<string[]>(`/api/rooms/${roomId}/presence`);
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Room whiteboard (the shared per-room drawing surface)
 // ---------------------------------------------------------------------------
 

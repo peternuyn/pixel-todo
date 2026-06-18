@@ -34,7 +34,7 @@ export default function StudyRoom({ roomId }: { roomId: string | null }) {
       </div>
 
       <div className="relative aspect-[16/9] day-sky overflow-hidden">
-        {tab === "whiteboard" ? <Whiteboard roomId={roomId} /> : <FarmScene />}
+        {tab === "whiteboard" ? <Whiteboard roomId={roomId} /> : <FarmScene roomId={roomId} />}
       </div>
     </section>
   );

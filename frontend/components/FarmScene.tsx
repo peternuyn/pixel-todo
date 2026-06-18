@@ -12,6 +12,10 @@ import theme4 from "@/assets/theme-room4.svg";
 import Pet from "./Pet";
 import WalkingPet from "./WalkingPet";
 import waterBg from "@/assets/gifs/water-background.gif";
+import { petApi, userApi, roomPresenceApi, PresenceEvent } from "@/lib/api";
+import { petWalkSrc } from "@/lib/pets";
+import { subscribeRoom } from "@/lib/ws";
+import { userTopPercent, userWalkSpeed } from "@/lib/userHash";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -24,13 +28,30 @@ const THEMES = [
   { id: 4, label: "Night",  src: theme4 },
 ];
 
-export default function FarmScene() {
+type Walker = {
+  userId: string;
+  displayName: string;
+  walkSrc: string;
+  top: string;
+  speed: number;
+};
+
+type PendingJoin = {
+  userId: string;
+  timestamp: number;
+};
+
+export default function FarmScene({ roomId }: { roomId: string | null }) {
   const [zoom, setZoom] = useState(1.3);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [themeId, setThemeId] = useState(3);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [walkers, setWalkers] = useState<Walker[]>([]);
 
   const activeTheme = THEMES.find((t) => t.id === themeId)!;
+
+  // Caches to avoid re-fetching on every useEffect.
+  const petMapRef = useRef<Map<string, string> | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
@@ -48,6 +69,100 @@ export default function FarmScene() {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
+
+  // Load walkers on room join. Fetch pet catalog once, then presence snapshot,
+  // then load user data for each present user. This happens only once per roomId change.
+  useEffect(() => {
+    if (!roomId) {
+      setWalkers([]);
+      return;
+    }
+
+    let active = true;
+
+    (async () => {
+      try {
+
+        // Ensure we have the pet id -> spriteKey map. Cache it so presence join events don't refetch.
+        if (!petMapRef.current) {
+          const pets = await petApi.list();
+          const map = new Map(pets.map((p) => [p.petId, p.spriteKey]));
+          petMapRef.current = map;
+        }
+
+        // Get who's in the room right now.
+        const presentIds = await roomPresenceApi.snapshot(roomId);
+        if (!active) return;
+
+        if (presentIds.length === 0) {
+          setWalkers([]);
+          return;
+        }
+
+        // Load user data for each present user in parallel, then build the walker list.
+        const walkerPromises = presentIds.map(async (userId) => {
+          const user = await userApi.getById(userId);
+          const spriteKey = petMapRef.current?.get(user.petId ?? "") ?? null;
+          const walkSrc = petWalkSrc(spriteKey);
+          return {
+            userId,
+            displayName: user.displayName,
+            walkSrc,
+            top: `${userTopPercent(userId)}%`,
+            speed: userWalkSpeed(userId),
+          };
+        });
+        const loadedWalkers = await Promise.all(walkerPromises);
+        if (active) {
+          setWalkers(loadedWalkers);
+        }
+      } catch (err) {
+        // Silently fail — the farm degrades to decorative mode with no dynamic pets.
+        console.error("[FarmScene] Failed to load presence walkers:", err);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [roomId]);
+
+  // Subscribe to presence join/leave events and update walker list in real-time.
+  useEffect(() => {
+    if (!roomId) return;
+
+    return subscribeRoom<PresenceEvent>(roomId, "presence", (event) => {
+      if (event.type === "join") {
+        // Someone joined. Fetch their user data asynchronously.
+        if (!event.userId) return;
+
+        userApi.getById(event.userId)
+          .then((user) => {
+            const spriteKey = petMapRef.current?.get(user.petId ?? "") ?? null;
+            const walkSrc = petWalkSrc(spriteKey);
+            const walker: Walker = {
+              userId: event.userId,
+              displayName: user.displayName,
+              walkSrc,
+              top: `${userTopPercent(event.userId)}%`,
+              speed: userWalkSpeed(event.userId),
+            };
+
+            // Only add if not already present (deduplication).
+            setWalkers((prev) =>
+              prev.some((w) => w.userId === event.userId)
+                ? prev
+                : [...prev, walker]
+            );
+          })
+          .catch((err) => {
+            console.error("[FarmScene] Failed to fetch user", event.userId, err);
+          });
+      } else if (event.type === "leave") {
+        setWalkers((prev) => prev.filter((w) => w.userId !== event.userId));
+      }
+    });
+  }, [roomId]);
 
   // Native non-passive wheel listener so preventDefault() actually blocks
   // trackpad pinch-to-zoom (which fires wheel events with ctrlKey=true)
@@ -147,14 +262,36 @@ export default function FarmScene() {
           />
 
           {/* Pets — positioned relative to the hills tile */}
-          <Pet
-            src={catGif}
-            name="Mai Linh"
-            className="top-[44%] left-[55%] -translate-x-1/2 -translate-y-1/2 w-[18%]"
-          />
-       
-          <WalkingPet src={cowGif} name="Bò" top="38%" width="12%" speed={10} minX={10} maxX={95} />
-          <WalkingPet src={humanWalking1Gif} name="Thanh" top="38%" width="7%" speed={6} minX={10} maxX={95}/>
+          {roomId ? (
+            // Dynamic walkers based on who's actually in the room
+            walkers.length > 0 ? (
+              walkers.map((w) => (
+                  <WalkingPet
+                    key={w.userId}
+                    src={w.walkSrc}
+                    name={w.displayName}
+                    top={w.top}
+                    width="12%"
+                    speed={w.speed}
+                    minX={10}
+                    maxX={95}
+                  />
+                ))
+            ) : (
+              <div className="text-white">No walkers loaded</div>
+            )
+          ) : (
+            // Decorative fallback when no room is selected
+            <>
+              <Pet
+                src={catGif}
+                name="Mai Linh"
+                className="top-[44%] left-[55%] -translate-x-1/2 -translate-y-1/2 w-[18%]"
+              />
+              <WalkingPet src={cowGif} name="Bò" top="38%" width="12%" speed={10} minX={10} maxX={95} />
+              <WalkingPet src={humanWalking1Gif} name="Thanh" top="38%" width="7%" speed={6} minX={10} maxX={95}/>
+            </>
+          )}
         </div>
       </div>
 

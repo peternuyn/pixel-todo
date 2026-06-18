@@ -1,6 +1,6 @@
 "use client";
 
-import Image, { type StaticImageData } from "next/image";
+import { type StaticImageData } from "next/image";
 import { useState } from "react";
 
 type Props = {
@@ -20,10 +20,9 @@ export default function Pet({ src, name, className = "", alt }: Props) {
       onMouseLeave={() => setHover(false)}
       className={`absolute ${className}`}
     >
-      <Image
-        src={src}
+      <img
+        src={typeof src === "string" ? src : src.src}
         alt={alt ?? name}
-        unoptimized
         className="w-full h-auto [image-rendering:pixelated] cursor-pointer"
       />
 
