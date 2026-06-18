@@ -2,14 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import catGif from "@/assets/cat/cat-walk.gif";
-import cowGif from "@/assets/cow/cow-walk.gif";
-import humanWalking1Gif from "@/assets/human/human-walk.gif"
 import theme1 from "@/assets/theme-room1.svg";
 import theme2 from "@/assets/theme-room2.svg";
 import theme3 from "@/assets/theme-room3.svg";
 import theme4 from "@/assets/theme-room4.svg";
-import Pet from "./Pet";
 import WalkingPet from "./WalkingPet";
 import waterBg from "@/assets/gifs/water-background.gif";
 import { petApi, userApi, roomPresenceApi, PresenceEvent } from "@/lib/api";
@@ -34,11 +30,6 @@ type Walker = {
   walkSrc: string;
   top: string;
   speed: number;
-};
-
-type PendingJoin = {
-  userId: string;
-  timestamp: number;
 };
 
 export default function FarmScene({ roomId }: { roomId: string | null }) {
@@ -262,36 +253,21 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
           />
 
           {/* Pets — positioned relative to the hills tile */}
-          {roomId ? (
-            // Dynamic walkers based on who's actually in the room
-            walkers.length > 0 ? (
-              walkers.map((w) => (
-                  <WalkingPet
-                    key={w.userId}
-                    src={w.walkSrc}
-                    name={w.displayName}
-                    top={w.top}
-                    width="12%"
-                    speed={w.speed}
-                    minX={10}
-                    maxX={95}
-                  />
-                ))
-            ) : (
-              <div className="text-white">No walkers loaded</div>
-            )
-          ) : (
-            // Decorative fallback when no room is selected
-            <>
-              <Pet
-                src={catGif}
-                name="Mai Linh"
-                className="top-[44%] left-[55%] -translate-x-1/2 -translate-y-1/2 w-[18%]"
+          {roomId && walkers.length > 0 && (
+            walkers.map((w) => (
+              <WalkingPet
+                key={w.userId}
+                src={w.walkSrc}
+                name={w.displayName}
+                top={w.top}
+                width="12%"
+                speed={w.speed}
+                minX={10}
+                maxX={95}
               />
-              <WalkingPet src={cowGif} name="Bò" top="30%" width="12%" speed={10} minX={10} maxX={95} />
-              <WalkingPet src={humanWalking1Gif} name="Thanh" top="30%" width="7%" speed={6} minX={10} maxX={95}/>
-            </>
+            ))
           )}
+        
         </div>
       </div>
 

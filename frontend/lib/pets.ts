@@ -1,6 +1,6 @@
 import type { StaticImageData } from "next/image";
 import catFront from "@/assets/cat/cat-front.gif";
-import catWalk from "@/assets/cat/cat-walk.gif";
+import catWalk from "@/assets/cat/cat-walk2.gif";
 import humanFront from "@/assets/human/human-front.gif";
 import humanWalk from "@/assets/human/human-walk.gif";
 // NOTE: cow and chicken don't have a "-front.gif" asset yet, only "-walk.gif",
