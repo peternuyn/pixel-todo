@@ -11,9 +11,11 @@
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",
     "@tanstack/react-query": "^5.101.0",
+    "konva": "^10.3.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-konva": "^19.2.5"
   },
   "devDependencies": {
     "@types/node": "^22",

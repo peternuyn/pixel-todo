@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import FarmScene from "./FarmScene";
+
+// Konva draws to a real <canvas> and touches the DOM at import time, so it can't
+// run during server-side rendering. Loading it with ssr:false keeps it client-only.
+const Whiteboard = dynamic(() => import("./Whiteboard"), { ssr: false });
 
 type Tab = "video" | "whiteboard";
 
-export default function StudyRoom() {
+export default function StudyRoom({ roomId }: { roomId: string | null }) {
   const [tab, setTab] = useState<Tab>("video");
 
   return (
@@ -29,8 +34,7 @@ export default function StudyRoom() {
       </div>
 
       <div className="relative aspect-[16/9] day-sky overflow-hidden">
-        
-        <FarmScene />
+        {tab === "whiteboard" ? <Whiteboard roomId={roomId} /> : <FarmScene />}
       </div>
     </section>
   );

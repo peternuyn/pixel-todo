@@ -102,3 +102,24 @@ export function subscribeRoom<T>(
     registry.delete(entry);
   };
 }
+
+/**
+ * Send a message INTO the server over the open socket, e.g.
+ * publishRoom(roomId, "whiteboard-live", { kind: "cursor", x, y }).
+ *
+ * This is the inbound counterpart to subscribeRoom. Where subscribeRoom listens on
+ * "/topic/..." (messages coming OUT to everyone), this publishes to "/app/..." —
+ * the prefix that routes to a backend @MessageMapping handler. The whiteboard uses
+ * it for the fast, throwaway stream (cursors + the stroke being dragged) that would
+ * be far too frequent to send over REST.
+ *
+ * Fire-and-forget: there's no response and no delivery guarantee — if a frame is
+ * dropped, the next one is milliseconds away.
+ */
+export function publishRoom(roomId: string, channel: string, body: unknown): void {
+  getClient().publish({
+    destination: `/app/rooms/${roomId}/${channel}`,
+    body: JSON.stringify(body),
+    headers: userHeaders(),
+  });
+}
