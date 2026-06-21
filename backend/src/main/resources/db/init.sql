@@ -141,6 +141,20 @@ CREATE TABLE room_timers (
 );
 
 
+-- Which BADGES each user has earned. The catalog of badges lives in code (the
+-- BadgeType enum), so we only store the *fact* a user earned one, plus when.
+-- The primary key is the PAIR (user_id, badge_key) — the same composite-key idea as
+-- belong_room(user_id, room_id) and message_reactions — which is what guarantees a
+-- user can never earn the same badge twice (the DB rejects a duplicate row).
+-- ON DELETE CASCADE: deleting a user sweeps away their badges too.
+CREATE TABLE user_badges (
+    user_id    UUID         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    badge_key  VARCHAR(48)  NOT NULL,    -- a BadgeType enum constant name, e.g. 'POMODORO_PAL'
+    earned_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, badge_key)
+);
+
+
 CREATE INDEX idx_rooms_host         ON rooms(host_id);
 CREATE INDEX idx_belong_room_user   ON belong_room(user_id);
 CREATE INDEX idx_belong_room_room   ON belong_room(room_id);
@@ -148,6 +162,7 @@ CREATE INDEX idx_sessions_user      ON sessions(user_id);
 CREATE INDEX idx_sessions_room      ON sessions(room_id);
 CREATE INDEX idx_pets_sprite_key    ON pets(sprite_key);
 CREATE INDEX idx_room_tasks_room    ON room_tasks(room_id);
+CREATE INDEX idx_user_badges_user   ON user_badges(user_id);
 -- Chat: list a room's messages oldest-first quickly (room_id + created_at), and
 -- look up all reactions for a message fast.
 CREATE INDEX idx_room_messages_room    ON room_messages(room_id, created_at);

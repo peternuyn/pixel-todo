@@ -1,3 +1,5 @@
+import type { Badge } from "./user";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export class ApiError extends Error {
@@ -70,6 +72,25 @@ export const userApi = {
       method: "PATCH",
       body: JSON.stringify({ displayName, bio, petId }),
     });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Badges (achievements)
+// ---------------------------------------------------------------------------
+
+export const badgeApi = {
+  // The raw badge catalog (GET /api/badges) — every badge as a "locked" entry, with
+  // no per-user info. Kept for general use; the profile uses forUser() below instead.
+  catalog() {
+    return request<Badge[]>("/api/badges");
+  },
+
+  // A user's FULL personalized badge list (GET /api/users/{id}/badges): earned ones
+  // carry an earnedAt date, locked ones carry progress toward unlocking. The backend
+  // re-checks stat badges on this call, so it also backfills any already qualified.
+  forUser(userId: string) {
+    return request<Badge[]>(`/api/users/${userId}/badges`);
   },
 };
 

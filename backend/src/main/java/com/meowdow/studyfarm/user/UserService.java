@@ -1,5 +1,6 @@
 package com.meowdow.studyfarm.user;
 
+import com.meowdow.studyfarm.badge.BadgeService;
 import com.meowdow.studyfarm.pet.PetRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     // Used to confirm a chosen pet actually exists before linking it to a user.
     private final PetRepository petRepository;
+    // Awards streak badges after a streak update.
+    private final BadgeService badgeService;
 
     // -------------------------------------------------------------------------
     // Registration
@@ -117,6 +120,8 @@ public class UserService {
     public User updateStreak(UUID userId, int newStreak) {
         User user = getById(userId);
         user.updateStreak(newStreak);
+        // A longer streak may unlock Week Warrior / Unbreakable.
+        badgeService.evaluateForUser(userId);
         return user;
     }
 }

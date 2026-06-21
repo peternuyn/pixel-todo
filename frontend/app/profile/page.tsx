@@ -13,6 +13,7 @@ import {
   roomApi,
   sessionApi,
   petApi,
+  badgeApi,
   getStoredUser,
   ApiError,
   type UserResponse,
@@ -65,6 +66,15 @@ export default function ProfilePage() {
   const { data: pets = [] } = useQuery({
     queryKey: ["pets"],
     queryFn: () => petApi.list(),
+  });
+
+  // This user's full personalized badge list: earned ones carry a date, locked ones
+  // carry progress toward unlocking. The backend backfills stat badges on this call.
+  // The ["badges", userId] key matches what BadgeToaster invalidates on a live unlock.
+  const { data: badges = [] } = useQuery({
+    queryKey: ["badges", userId],
+    queryFn: () => badgeApi.forUser(userId!),
+    enabled: !!userId,
   });
 
   // --- edit profile ---
@@ -128,13 +138,11 @@ export default function ProfilePage() {
       hours: Math.round(((s.durationSeconds ?? 0) / 3600) * 10) / 10,
       date: formatDate(s.startedAt),
     }));
-  const badges = earnedBadges({
-    totalStudyHours: user.totalStudyHours,
-    sessionsDone: user.sessionsDone,
-    currentStreak: user.currentStreak,
-    longestStreak: user.longestStreak,
-    roomsHosted: hostedRooms.length,
-  });
+  // Sort so earned badges come first; locked ones (with progress bars) trail behind.
+  const earnedCount = badges.filter((b) => b.earnedAt).length;
+  const sortedBadges = [...badges].sort(
+    (a, b) => Number(Boolean(b.earnedAt)) - Number(Boolean(a.earnedAt))
+  );
 
   return (
     <main
@@ -200,28 +208,60 @@ export default function ProfilePage() {
 
         {/* Badges */}
         <div className="panel">
-          <SectionHeading>Badges</SectionHeading>
+          <div className="flex items-center justify-between">
+            <SectionHeading>Badges</SectionHeading>
+            <span className="font-press text-[8px] text-ink/40 tracking-widest">
+              {earnedCount}/{badges.length}
+            </span>
+          </div>
           {badges.length === 0 ? (
             <p className="font-pixelify text-sm text-ink/50 mt-3">
               No badges yet — keep studying to earn some! 🌱
             </p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
-              {badges.map((badge) => (
-                <div
-                  key={badge.id}
-                  title={badge.description}
-                  className="flex flex-col items-center gap-1.5 border-[3px] border-panel-stroke bg-panel-shadow/40 py-3 px-2 text-center"
-                >
-                  <span className="text-3xl">{badge.icon}</span>
-                  <span className="font-press text-[8px] text-ink leading-tight">
-                    {badge.label}
-                  </span>
-                  <span className="font-pixelify text-[10px] text-ink/50 leading-tight">
-                    {badge.description}
-                  </span>
-                </div>
-              ))}
+              {sortedBadges.map((badge) => {
+                const isEarned = !!badge.earnedAt;
+                // Locked snapshot badges show how close you are ("8 / 10 sessions").
+                const hasProgress = !isEarned && badge.progressTarget != null;
+                const pct = hasProgress
+                  ? Math.min(100, Math.round((100 * (badge.progressCurrent ?? 0)) / badge.progressTarget!))
+                  : 0;
+                return (
+                  <div
+                    key={badge.key}
+                    title={badge.description}
+                    className={`flex flex-col items-center gap-1.5 border-[3px] border-panel-stroke py-3 px-2 text-center ${
+                      isEarned ? "bg-panel-shadow/40" : "bg-panel-shadow/10 opacity-60"
+                    }`}
+                  >
+                    <span className={`text-3xl ${isEarned ? "" : "grayscale opacity-70"}`}>
+                      {badge.emoji}
+                    </span>
+                    <span className="font-press text-[8px] text-ink leading-tight">
+                      {badge.label}
+                    </span>
+                    <span className="font-pixelify text-[10px] text-ink/50 leading-tight">
+                      {badge.description}
+                    </span>
+
+                    {isEarned ? (
+                      <span className="font-press text-[6px] text-grass-dark tracking-widest mt-0.5">
+                        {formatDate(badge.earnedAt!).toUpperCase()}
+                      </span>
+                    ) : hasProgress ? (
+                      <div className="w-full mt-1">
+                        <div className="h-1.5 w-full border-[2px] border-panel-stroke bg-white/50">
+                          <div className="h-full bg-grass-dark" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="font-press text-[6px] text-ink/50 tracking-wide">
+                          {progressLabel(badge)}
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -297,22 +337,16 @@ function mostCommonTag(tags: string[]): string | null {
   return best;
 }
 
-/** Badges are earned by hitting real milestones in the user's stats. */
-function earnedBadges(stats: {
-  totalStudyHours: number;
-  sessionsDone: number;
-  currentStreak: number;
-  longestStreak: number;
-  roomsHosted: number;
-}): Badge[] {
-  const all: (Badge & { earned: boolean })[] = [
-    { id: "first-session", icon: "🌱", label: "Sprout", description: "Did your first session", earned: stats.sessionsDone >= 1 },
-    { id: "streak-7", icon: "🔥", label: "On Fire", description: "7-day study streak", earned: stats.currentStreak >= 7 || stats.longestStreak >= 7 },
-    { id: "sessions-50", icon: "✅", label: "Dedicated", description: "50+ sessions done", earned: stats.sessionsDone >= 50 },
-    { id: "host", icon: "🏡", label: "Host", description: "Hosted 5+ rooms", earned: stats.roomsHosted >= 5 },
-    { id: "century", icon: "💯", label: "Century", description: "100+ study hours", earned: stats.totalStudyHours >= 100 },
-  ];
-  return all.filter((b) => b.earned);
+/** Human label for a locked badge's progress, formatted by its category. */
+function progressLabel(badge: Badge): string {
+  const current = badge.progressCurrent ?? 0;
+  const target = badge.progressTarget ?? 0;
+  if (badge.category === "TIME") {
+    // Stored in seconds; show hours.
+    return `${(current / 3600).toFixed(1)} / ${Math.round(target / 3600)}h`;
+  }
+  if (badge.category === "STREAK") return `${current} / ${target}d`;
+  return `${current} / ${target}`;
 }
 
 /** "Jun 7, 2026" */

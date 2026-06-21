@@ -1,5 +1,8 @@
 package com.meowdow.studyfarm.realtime;
 
+import com.meowdow.studyfarm.badge.BadgeService;
+import com.meowdow.studyfarm.badge.BadgeType;
+import com.meowdow.studyfarm.room.RoomRepository;
 import com.meowdow.studyfarm.roomtimer.RoomTimerRepository;
 import com.meowdow.studyfarm.roomtimer.RoomTimerState;
 import com.meowdow.studyfarm.roomtimer.SessionBridge;
@@ -50,6 +53,9 @@ public class RoomPresenceService {
     private final SimpMessagingTemplate messagingTemplate;
     private final RoomTimerRepository roomTimerRepository;
     private final SessionBridge sessionBridge;
+    // To award the room's host the Party Host badge once 5 people study together.
+    private final BadgeService badgeService;
+    private final RoomRepository roomRepository;
 
     // roomId -> (stompSessionId -> userId). ConcurrentHashMap because WebSocket
     // events can arrive on different threads at the same time.
@@ -84,9 +90,16 @@ public class RoomPresenceService {
         // so subscribing to several channels (timer, presence, chat) on one
         // connection doesn't fire repeated "joined" events.
         if (!wasPresent) {
+            int present = distinctUserCount(room);
             messagingTemplate.convertAndSend(
                     "/topic/rooms/" + roomId + "/presence",
-                    PresenceEvent.join(roomId, userId, distinctUserCount(room)));
+                    PresenceEvent.join(roomId, userId, present));
+
+            // Once 5 people are studying together, the room's HOST earns Party Host.
+            if (present >= 5) {
+                roomRepository.findById(roomId).ifPresent(
+                        r -> badgeService.award(r.getHostId(), BadgeType.PARTY_HOST));
+            }
 
             // If the shared clock is already RUNNING, this late arrival should start
             // earning study time from now.
@@ -128,6 +141,21 @@ public class RoomPresenceService {
         Map<String, UUID> room = presence.get(roomId);
         if (room == null) return Set.of();
         return new HashSet<>(room.values());
+    }
+
+    /**
+     * The rooms a user is currently present in (usually one). Used by the badge
+     * announcer to celebrate a freshly-earned badge in the room(s) they're studying
+     * in — and to stay silent when they earned it outside any room.
+     */
+    public Set<UUID> roomsOf(UUID userId) {
+        Set<UUID> rooms = new HashSet<>();
+        for (Map.Entry<UUID, Map<String, UUID>> entry : presence.entrySet()) {
+            if (entry.getValue().containsValue(userId)) {
+                rooms.add(entry.getKey());
+            }
+        }
+        return rooms;
     }
 
     private int distinctUserCount(Map<String, UUID> room) {

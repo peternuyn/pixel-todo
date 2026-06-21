@@ -123,6 +123,33 @@
 }
 
 /*
+ * Badge celebration animations. Used by BadgeToaster (the personal "you earned a
+ * badge" toast) and RoomCelebration (the in-room banner). Plain CSS keyframes so we
+ * don't need a Tailwind animation plugin.
+ */
+@keyframes badge-pop-in {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.9); }
+  60%  { transform: translateY(-3px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-badge-pop { animation: badge-pop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* A sparkle flies outward (--dx/--dy) and fades. */
+@keyframes badge-sparkle {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  35%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx, 0), var(--dy, -16px)) scale(1.1) rotate(20deg); }
+}
+.animate-sparkle { animation: badge-sparkle 0.9s ease-out forwards; }
+
+/* A gentle slide-down for the room banner. */
+@keyframes badge-banner-in {
+  0%   { opacity: 0; transform: translateY(-12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-banner { animation: badge-banner-in 0.35s ease-out both; }
+
+/*
  * Accessible keyboard focus ring — a hard butter-yellow outline that fits the
  * pixel theme. It only appears for KEYBOARD users (:focus-visible), so mouse
  * users with the cat-paw cursor never see it, but tabbing through controls now

@@ -107,6 +107,44 @@ export function subscribeRoom<T>(
 }
 
 /**
+ * Subscribe to one of a USER's personal channels, e.g.
+ * subscribeUser(userId, "badges", cb). Same mechanics as subscribeRoom, but the
+ * destination is "/topic/users/{userId}/{channel}" — used for things meant for one
+ * user rather than a whole room (today: live "badge unlocked" notifications).
+ *
+ * Returns an unsubscribe function — call it on component unmount.
+ */
+export function subscribeUser<T>(
+  userId: string,
+  channel: string,
+  onMessage: (data: T) => void
+): () => void {
+  const c = getClient();
+  const topic = `/topic/users/${userId}/${channel}`;
+
+  const entry: Registered = {
+    topic,
+    headers: userHeaders(),
+    onMessage: onMessage as (data: unknown) => void,
+    sub: null,
+  };
+  registry.add(entry);
+
+  if (c.connected) {
+    entry.sub = c.subscribe(
+      topic,
+      (msg: IMessage) => deliver(entry, msg),
+      entry.headers
+    );
+  }
+
+  return () => {
+    entry.sub?.unsubscribe();
+    registry.delete(entry);
+  };
+}
+
+/**
  * Send a message INTO the server over the open socket, e.g.
  * publishRoom(roomId, "whiteboard-live", { kind: "cursor", x, y }).
  *

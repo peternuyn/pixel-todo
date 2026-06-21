@@ -26,4 +26,10 @@ public interface BelongRoomRepository extends JpaRepository<BelongRoom, BelongRo
 
     /** Quick membership check without loading the row. */
     boolean existsByIdUserIdAndIdRoomId(UUID userId, UUID roomId);
+
+    /** How many rooms this user belongs to in total (one row per room). */
+    long countByIdUserId(UUID userId);
+
+    /** How many rooms this user belongs to with a given role ("host" / "member"). */
+    long countByIdUserIdAndRole(UUID userId, String role);
 }

@@ -1,5 +1,7 @@
 package com.meowdow.studyfarm.room;
 
+import com.meowdow.studyfarm.badge.BadgeService;
+import com.meowdow.studyfarm.badge.BadgeType;
 import com.meowdow.studyfarm.membership.BelongRoom;
 import com.meowdow.studyfarm.membership.BelongRoomId;
 import com.meowdow.studyfarm.membership.BelongRoomRepository;
@@ -24,6 +26,8 @@ public class RoomService {
     private final TagService tagService;
     // Records who belongs to which room (the belong_room join table).
     private final BelongRoomRepository belongRoomRepository;
+    // Awards the host/social badges around creating, joining and filling rooms.
+    private final BadgeService badgeService;
 
     // -------------------------------------------------------------------------
     // Create
@@ -64,6 +68,9 @@ public class RoomService {
         // membership row and count the host as the first member.
         belongRoomRepository.save(BelongRoom.of(hostId, saved.getRoomId(), "host"));
         saved.incrementMembers();
+
+        // Hosting any room earns the Homesteader badge (idempotent after the first).
+        badgeService.award(hostId, BadgeType.HOMESTEADER);
 
         return saved;
     }
@@ -122,6 +129,14 @@ public class RoomService {
 
         belongRoomRepository.save(BelongRoom.of(userId, roomId, "member"));
         room.incrementMembers();
+
+        // Joining unlocks Good Neighbor (first join) and eventually Social Butterfly
+        // (10 different rooms) — evaluateForUser counts the user's memberships.
+        badgeService.evaluateForUser(userId);
+        // If this join just filled the room, the HOST earns Full House.
+        if (room.isFull()) {
+            badgeService.award(room.getHostId(), BadgeType.FULL_HOUSE);
+        }
         return room;
     }
 

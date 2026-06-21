@@ -1,5 +1,6 @@
 package com.meowdow.studyfarm.session;
 
+import com.meowdow.studyfarm.badge.BadgeService;
 import com.meowdow.studyfarm.room.RoomService;
 import com.meowdow.studyfarm.user.UserService;
 import jakarta.transaction.Transactional;
@@ -20,6 +21,8 @@ public class SessionService {
     // study-time accounting) stay in one place instead of being duplicated here.
     private final UserService userService;
     private final RoomService roomService;
+    // Awards badges when a session ends (focus-duration badges + re-checks stat badges).
+    private final BadgeService badgeService;
 
     // -------------------------------------------------------------------------
     // Start
@@ -92,6 +95,15 @@ public class SessionService {
 
         // Credit the time to the user (adds to study time + sessions_done).
         userService.recordStudySession(userId, elapsedSeconds);
+
+        // Now that the user's totals are updated, check for newly earned badges.
+        // awardSessionDuration handles the single-session focus badges (which can't
+        // be recovered from the totals later); evaluateForUser re-checks the
+        // cumulative-time / session-count / first-session badges. This one spot covers
+        // BOTH personal and room sessions, because room-clock completion ends each
+        // user's session through SessionBridge -> endSession.
+        badgeService.awardSessionDuration(userId, elapsedSeconds);
+        badgeService.evaluateForUser(userId);
 
         return session; // managed entity; changes flush at commit
     }
