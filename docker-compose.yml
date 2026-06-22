@@ -19,6 +19,8 @@ services:
       # Named volume = your data survives container restarts/rebuilds.
       # if using EC2, make sure this lives on an EBS volume so it's durable.
       - pgdata:/var/lib/postgresql/data
+      # Postgres only runs scripts here on first init (empty data dir).
+      - ./backend/src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studyfarm} -d ${POSTGRES_DB:-studyfarm}"]
       interval: 5s

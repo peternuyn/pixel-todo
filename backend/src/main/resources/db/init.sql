@@ -53,7 +53,8 @@ CREATE TABLE rooms (
 CREATE TABLE tags (
     tag_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        VARCHAR(32)  NOT NULL UNIQUE,
-    created_by  UUID         REFERENCES users(user_id) ON DELETE SET NULL
+    created_by  UUID         REFERENCES users(user_id) ON DELETE SET NULL,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 -- which tags belong to which room
