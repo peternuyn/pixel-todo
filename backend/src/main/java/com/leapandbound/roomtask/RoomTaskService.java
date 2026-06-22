@@ -1,5 +1,7 @@
 package com.leapandbound.roomtask;
 
+import com.leapandbound.badge.BadgeService;
+import com.leapandbound.badge.BadgeType;
 import com.leapandbound.membership.BelongRoomRepository;
 import com.leapandbound.room.RoomService;
 import jakarta.transaction.Transactional;
@@ -31,6 +33,11 @@ public class RoomTaskService {
     private final RoomService roomService;
     // Lets us verify the user actually belongs to the room before they add tasks.
     private final BelongRoomRepository belongRoomRepository;
+    // The shared "brain" that decides and grants badges. We call it when a task is
+    // created so the user can earn the Task Planter badge. We don't talk to the
+    // badge database ourselves — we delegate to BadgeService, which owns the
+    // "award exactly once" rule (the same way we delegate room checks to RoomService).
+    private final BadgeService badgeService;
 
     // -------------------------------------------------------------------------
     // Read
@@ -68,7 +75,18 @@ public class RoomTaskService {
                 .title(title)
                 .build();
 
-        return roomTaskRepository.save(task);
+        RoomTask saved = roomTaskRepository.save(task);
+
+        // Adding a shared room to-do task earns the Task Planter badge. award() is IDEMPOTENT:
+        // it checks whether the user already has the badge and quietly does nothing
+        // if so. That means we can safely call it on EVERY task creation without
+        // worrying about "is this their first task?" ourselves — the badge is granted
+        // (and the celebratory WebSocket toast pushed to their browser) only the very
+        // first time. This is the same pattern RoomService uses for the Homesteader
+        // ("first room hosted") badge.
+        badgeService.award(userId, BadgeType.TASK_PLANTER);
+
+        return saved;
     }
 
     // -------------------------------------------------------------------------

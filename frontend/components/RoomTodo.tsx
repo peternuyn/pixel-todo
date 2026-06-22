@@ -57,8 +57,11 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
     onSuccess: () => {
       setDraft("");
       setError(null);
-      // No invalidateQueries — the broadcast from the server will update the cache
-      // for everyone (including this user) via the subscription above.
+      // The task list itself updates via the WebSocket broadcast above, so we
+      // don't invalidate it here. We DO refetch the badge list, though: adding a
+      // first task unlocks the Task Planter achievement, and this makes
+      // BadgeToaster pop it reliably even if the live badge push was missed.
+      queryClient.invalidateQueries({ queryKey: ["badges", user!.userId] });
     },
     onError: (err) => showError(err, "Failed to add task"),
   });

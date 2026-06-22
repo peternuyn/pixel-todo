@@ -52,8 +52,12 @@ export default function RoomsPage() {
   // Create a room, then invalidate the rooms cache so the list refetches.
   const createRoom = useMutation({
     mutationFn: (body: CreateRoomRequest) => roomApi.create(body),
-    onSuccess: () => {
+    onSuccess: (_room, body) => {
       queryClient.invalidateQueries({ queryKey: ROOMS_KEY });
+      // Hosting a room can unlock the Homesteader badge. Refetch the badge list so
+      // BadgeToaster notices and pops the achievement even if the live WebSocket
+      // push was missed 
+      queryClient.invalidateQueries({ queryKey: ["badges", body.hostId] });
     },
   });
 

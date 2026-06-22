@@ -38,6 +38,8 @@ public enum BadgeType {
             Category.FIRSTS, null, 0),            // event: awarded when a room is created
     GOOD_NEIGHBOR("🤝", "Good Neighbor", "Joined your first room",
             Category.FIRSTS, null, 0),            // event: awarded when joining a room
+    TASK_PLANTER("📝", "Task Planter", "Added your first shared room task",
+            Category.FIRSTS, null, 0),            // event: awarded when a shared room task is created
 
     // --- Single-session focus duration --------------------------------------
     QUICK_GRAZE("⏱️", "Quick Graze", "Studied for 10 minutes straight",
