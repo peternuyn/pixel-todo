@@ -8,6 +8,8 @@ import humanWalk from "@/assets/human/human-walk.gif";
 // chicken-front.gif here later and they'll be picked up automatically.
 import cowWalk from "@/assets/cow/cow-walk.gif";
 import chickenWalk from "@/assets/chicken/chicken-walk.gif";
+import pescyFront from "@/assets/pescy/pescy-front.gif";
+import pescyWalk from "@/assets/pescy/pescy-walk.gif";
 
 // Maps a pet's spriteKey (from the backend) to its STATIONARY avatar image.
 // Used when showing a pet standing still (e.g. in a profile).
@@ -16,6 +18,7 @@ export const PET_AVATARS: Record<string, StaticImageData> = {
   human: humanFront,
   cow: cowWalk,
   chicken: chickenWalk,
+  pescy: pescyFront,
 };
 
 // Maps a pet's spriteKey to its WALKING animation. Used for the farm scene
@@ -25,6 +28,7 @@ export const PET_WALKS: Record<string, StaticImageData> = {
   human: humanWalk,
   cow: cowWalk,
   chicken: chickenWalk,
+  pescy: pescyWalk,
 };
 
 // The avatar to show when a user hasn't chosen a pet yet.
