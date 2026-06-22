@@ -131,7 +131,7 @@ export default function BadgeToaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 top-6 z-[120] flex flex-col items-center gap-3 px-4">
+    <div className="fixed bottom-6 right-6 z-[120] flex flex-col items-end gap-3 px-4">
       {toasts.map(({ id, badge }) => (
         <button
           key={id}
