@@ -1,20 +1,48 @@
+# ---------------------------------------------------------------------------
+# Here we run two services:
+#   - postgres : the database
+#   - backend  : your Spring Boot app
+# Secrets (DB password, etc.) are read from a .env file in this same folder so
+# they are NOT hard-coded here. Copy .env.example to .env and fill it in.
+# ---------------------------------------------------------------------------
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: studyfarm-postgres
+    container_name: leap-and-bound-postgres
     environment:
-      POSTGRES_DB: studyfarm
-      POSTGRES_USER: studyfarm
-      POSTGRES_PASSWORD: studyfarm
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-studyfarm}
+      POSTGRES_USER: ${POSTGRES_USER:-studyfarm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studyfarm}
+    # Note: no "ports:" here. The database is only reachable by other containers
+    # on the internal Docker network (the backend), NOT from the public internet.
     volumes:
-      - studyfarm-pgdata:/var/lib/postgresql/data
+      # Named volume = your data survives container restarts/rebuilds.
+      # if using EC2, make sure this lives on an EBS volume so it's durable.
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U studyfarm -d studyfarm"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studyfarm} -d ${POSTGRES_DB:-studyfarm}"]
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend       
+      dockerfile: Dockerfile
+    container_name: leap-and-bound-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-studyfarm}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-studyfarm}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-studyfarm}
+      # The public URL of your frontend, for CORS. Set this in .env on the server.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  studyfarm-pgdata:
+  pgdata:

@@ -14,6 +14,9 @@ backend/HELP.md
 .vscode/
 *.iml
 
+# Secrets / local env (the real docker-compose .env, never commit it)
+.env
+
 # OS
 .DS_Store
 
