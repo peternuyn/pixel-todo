@@ -38,9 +38,14 @@ CREATE TABLE rooms (
     name           VARCHAR(64)  NOT NULL,
     description    TEXT,
     capacity       INT          NOT NULL DEFAULT 10,
-    total_members  INT          NOT NULL DEFAULT 0,
+    total_members  INT          NOT NULL DEFAULT 0,   -- people CURRENTLY in the room 
+    total_joins    INT          NOT NULL DEFAULT 0,   -- all-time joins (only ever goes up)
     status         VARCHAR(8)   NOT NULL DEFAULT 'public' CHECK (status IN ('public', 'private')),
     password_hash  TEXT,                        -- NULL for public rooms
+    -- Which farm scene the room shows (1=Meadow, 2=Sunset, 3=Forest, 4=Night).
+    -- This is the room's shared "environment"; everyone in the room sees it, and
+    -- the rooms list shows the matching banner on each card.
+    theme_id       INT          NOT NULL DEFAULT 3 CHECK (theme_id BETWEEN 1 AND 4),
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { playSfx } from "@/lib/sfx";
+
 // A single to-do line: a pixel checkbox + the label, with an optional ✕ delete
 // button that fades in on hover. Both the Room and Personal lists render this,
 // so the look stays identical between the two tabs.
@@ -22,7 +24,15 @@ export default function TodoRow({
 }) {
   return (
     <li
-      onClick={disabled ? undefined : onToggle}
+      onClick={
+        disabled
+          ? undefined
+          : () => {
+              // Ticking a task DONE is a satisfying "confirm"; un-ticking is lighter.
+              playSfx(done ? "select" : "confirm");
+              onToggle();
+            }
+      }
       className={`group flex items-center gap-2.5 font-pixelify text-lg select-none ${
         disabled ? "opacity-50" : "cursor-pointer"
       }`}
@@ -47,9 +57,11 @@ export default function TodoRow({
         <button
           type="button"
           aria-label="Delete task"
+          data-sfx="off"
           onClick={(e) => {
             // Stop the click from also toggling the row.
             e.stopPropagation();
+            playSfx("cancel");
             onRemove();
           }}
           disabled={disabled}

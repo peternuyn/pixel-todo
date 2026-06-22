@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { tagApi } from "@/lib/api";
+import { playSfx } from "@/lib/sfx";
 
 type Props = {
   onConfirm: (data: CreateRoomData) => void | Promise<void>;
@@ -55,6 +56,9 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Closing the modal (✕, Cancel, or backdrop) is a "cancel" sound.
+  const dismiss = () => { playSfx("cancel"); onClose(); };
 
   function setField<K extends keyof CreateRoomData>(field: K, value: CreateRoomData[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -123,6 +127,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
+    playSfx("confirm");
     setSubmitting(true);
     try {
       await onConfirm(form);
@@ -139,7 +144,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
   return (
     <>
       {/* Backdrop */}
-      <div onClick={onClose} className="fixed inset-0 z-50 bg-black/50" />
+      <div onClick={dismiss} className="fixed inset-0 z-50 bg-black/50" />
 
       {/* Modal — scrollable on small screens */}
       <div
@@ -159,7 +164,8 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            data-sfx="off"
+            onClick={dismiss}
             className="w-8 h-8 flex items-center justify-center border-[3px] border-panel-stroke bg-wood-light font-press text-[10px] active:translate-y-[2px]"
           >
             ✕
@@ -350,12 +356,13 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
 
           {/* Actions */}
           <div className="flex gap-2 justify-end mt-1">
-            <button type="button" onClick={onClose} className="tag" disabled={submitting}>
+            <button type="button" onClick={dismiss} data-sfx="off" className="tag" disabled={submitting}>
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
+              data-sfx="off"
               className="tag active bg-sun hover:bg-sun-deep disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Create Room →"}

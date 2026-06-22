@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PRESET_MINUTES, formatMMSS } from "@/lib/timer";
+import { playSfx } from "@/lib/sfx";
 
 // A purely PRESENTATIONAL clock: it shows the time and the controls, and calls
 // back when the user clicks. It holds no timer logic itself — the room clock
@@ -37,6 +38,7 @@ export default function TimerView({
     e.preventDefault();
     const minutes = Number(custom);
     if (!Number.isFinite(minutes) || minutes <= 0) return;
+    playSfx("select");
     onSetMinutes(minutes);
     setCustom("");
   }
@@ -51,10 +53,21 @@ export default function TimerView({
       </p>
 
       <div className="flex gap-2 mt-3">
-        <button className="tag" onClick={onToggle} disabled={busy}>
+        <button
+          className="tag"
+          data-sfx="off"
+          // Starting study is a positive commit; pausing is a lighter UI move.
+          onClick={() => { playSfx(running ? "select" : "confirm"); onToggle(); }}
+          disabled={busy}
+        >
           {running ? "Pause" : "Start"}
         </button>
-        <button className="tag" onClick={onReset} disabled={busy}>
+        <button
+          className="tag"
+          data-sfx="off"
+          onClick={() => { playSfx("cancel"); onReset(); }}
+          disabled={busy}
+        >
           Reset
         </button>
       </div>
@@ -81,7 +94,7 @@ export default function TimerView({
             disabled={presetsDisabled || busy}
             className="w-14 font-pixelify text-base bg-white border-[3px] border-panel-stroke px-2 py-1.5 outline-none text-ink focus:bg-[#F4FBF5] disabled:opacity-50"
           />
-          <button type="submit" className="tag" disabled={presetsDisabled || busy}>
+          <button type="submit" className="tag" data-sfx="off" disabled={presetsDisabled || busy}>
             Set
           </button>
         </form>

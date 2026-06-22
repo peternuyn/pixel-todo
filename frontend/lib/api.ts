@@ -130,7 +130,10 @@ export function getStoredUser(): UserResponse | null {
 // Rooms
 // ---------------------------------------------------------------------------
 
-// Mirrors the backend's RoomController.RoomResponse record.
+// Mirrors the backend's RoomController.RoomResponse record. We only declare the
+// fields the UI actually reads — the backend also sends totalMembers/isFull
+// (its membership-based capacity gate), but the card derives "full" from the live
+// count instead, so we leave those off. Extra JSON fields are simply ignored.
 export type RoomResponse = {
   roomId: string;
   hostId: string;
@@ -138,10 +141,11 @@ export type RoomResponse = {
   name: string;
   description: string | null;
   capacity: number;
-  totalMembers: number;
+  totalJoins: number; // all-time joins (only grows)
+  liveCount: number; // who is connected to the room RIGHT NOW (WebSocket presence)
   status: string; // "public" | "private"
   isPrivate: boolean;
-  isFull: boolean;
+  themeId: number; // 1=Meadow, 2=Sunset, 3=Forest, 4=Night
   tags: string[];
   createdAt: string;
 };
@@ -171,9 +175,24 @@ export const roomApi = {
     return request<RoomResponse[]>("/api/rooms");
   },
 
+  // A single room by id (GET /api/rooms/{roomId}). FarmScene uses this to learn
+  // the room's saved theme when it opens.
+  get(roomId: string) {
+    return request<RoomResponse>(`/api/rooms/${roomId}`);
+  },
+
   // Rooms a given user hosts (GET /api/rooms/host/{hostId}).
   listByHost(hostId: string) {
     return request<RoomResponse[]>(`/api/rooms/host/${hostId}`);
+  },
+
+  // Change the room's shared scene/environment (PATCH /api/rooms/{roomId}/theme).
+  // Any member can do this; the backend checks membership. Returns the updated room.
+  setTheme(roomId: string, userId: string, themeId: number) {
+    return request<RoomResponse>(`/api/rooms/${roomId}/theme`, {
+      method: "PATCH",
+      body: JSON.stringify({ requesterId: userId, themeId }),
+    });
   },
 
   // Join a room (POST /api/rooms/{roomId}/join). This creates the membership

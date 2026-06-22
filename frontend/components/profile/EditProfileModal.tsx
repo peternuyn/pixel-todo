@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { petAvatarSrc } from "@/lib/pets";
+import { playSfx } from "@/lib/sfx";
 import type { PetResponse } from "@/lib/api";
 
 const MAX_BIO_LENGTH = 280;
@@ -40,6 +41,9 @@ export default function EditProfileModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Closing the modal (✕, Cancel, or backdrop) is a "cancel" sound.
+  const dismiss = () => { playSfx("cancel"); onClose(); };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const name = displayName.trim();
@@ -51,6 +55,7 @@ export default function EditProfileModal({
       setError("Display name must be 64 characters or fewer");
       return;
     }
+    playSfx("confirm");
     setSubmitting(true);
     try {
       // A blank bio is fine — the backend resets it to the default.
@@ -63,7 +68,7 @@ export default function EditProfileModal({
   return (
     <>
       {/* Backdrop */}
-      <div onClick={onClose} className="fixed inset-0 z-50 bg-black/50" />
+      <div onClick={dismiss} className="fixed inset-0 z-50 bg-black/50" />
 
       {/* Modal */}
       <div
@@ -83,7 +88,8 @@ export default function EditProfileModal({
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            data-sfx="off"
+            onClick={dismiss}
             className="w-8 h-8 flex items-center justify-center border-[3px] border-panel-stroke bg-wood-light font-press text-[10px] active:translate-y-[2px]"
           >
             ✕
@@ -173,12 +179,13 @@ export default function EditProfileModal({
 
           {/* Actions */}
           <div className="flex gap-2 justify-end mt-1">
-            <button type="button" onClick={onClose} className="tag" disabled={submitting}>
+            <button type="button" onClick={dismiss} data-sfx="off" className="tag" disabled={submitting}>
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
+              data-sfx="off"
               className="tag active bg-sun hover:bg-sun-deep disabled:opacity-50"
             >
               {submitting ? "Saving…" : "Save →"}

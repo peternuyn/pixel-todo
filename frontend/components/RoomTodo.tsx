@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { roomTaskApi, RoomTaskResponse, TaskEvent, getStoredUser, ApiError } from "@/lib/api";
 import { subscribeRoom } from "@/lib/ws";
+import { playSfx } from "@/lib/sfx";
 import TodoRow from "./TodoRow";
 
 // The SHARED to-do list for one room. It's backed by the API, so every member
@@ -86,6 +87,7 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
       setError("You must be logged in to add tasks");
       return;
     }
+    playSfx("confirm");
     addTask.mutate(title);
   }
 
@@ -140,7 +142,7 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
           placeholder="Add a shared task..."
           className="flex-1 font-pixelify text-base bg-white border-[3px] border-panel-stroke px-2 py-1.5 outline-none text-ink focus:bg-[#F4FBF5] disabled:opacity-50"
         />
-        <button type="submit" disabled={busy} className="tag disabled:opacity-50">
+        <button type="submit" disabled={busy} data-sfx="off" className="tag disabled:opacity-50">
           Add
         </button>
       </form>

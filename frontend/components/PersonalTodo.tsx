@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getStoredUser } from "@/lib/api";
+import { playSfx } from "@/lib/sfx";
 import TodoRow from "./TodoRow";
 
 type Item = { id: number; label: string; done: boolean };
@@ -60,6 +61,7 @@ export default function PersonalTodo() {
     e.preventDefault();
     const label = draft.trim();
     if (!label) return;
+    playSfx("confirm");
     setTodos((ts) => [...ts, { id: Date.now(), label, done: false }]);
     setDraft("");
   }
@@ -99,7 +101,7 @@ export default function PersonalTodo() {
               placeholder="Plant a new task..."
               className="flex-1 font-pixelify text-base bg-white border-[3px] border-panel-stroke px-2 py-1.5 outline-none text-ink focus:bg-[#F4FBF5]"
             />
-            <button type="submit" className="tag">
+            <button type="submit" data-sfx="off" className="tag">
               Add
             </button>
           </form>

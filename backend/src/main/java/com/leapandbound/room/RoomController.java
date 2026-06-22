@@ -1,9 +1,12 @@
 package com.leapandbound.room;
 
+import com.leapandbound.realtime.RoomPresenceService;
 import com.leapandbound.tags.Tag;
 import com.leapandbound.user.User;
 import com.leapandbound.user.UserRepository;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -23,6 +26,10 @@ public class RoomController {
 
     private final RoomService roomService;
     private final UserRepository userRepository;
+    // In-memory tracker of who is CURRENTLY connected to each room over WebSocket.
+    // This is the live "people in the room right now" count — distinct from
+    // total_members (who ever joined) and total_joins (all-time joins).
+    private final RoomPresenceService presenceService;
 
     // -------------------------------------------------------------------------
     // DTOs
@@ -58,6 +65,13 @@ public class RoomController {
             @NotNull UUID requesterId
     ) {}
 
+    // The body for PATCH /{roomId}/theme. requesterId lets the service confirm the
+    // caller is actually a member of the room before reskinning it.
+    record UpdateThemeRequest(
+            @NotNull UUID requesterId,
+            @Min(1) @Max(4) int themeId
+    ) {}
+
     record RoomResponse(
             UUID roomId,
             UUID hostId,
@@ -66,13 +80,16 @@ public class RoomController {
             String description,
             int capacity,
             int totalMembers,
+            int totalJoins,
+            int liveCount,
             String status,
             boolean isPrivate,
             boolean isFull,
+            int themeId,
             List<String> tags,
             OffsetDateTime createdAt
     ) {
-        static RoomResponse from(Room room, String hostName) {
+        static RoomResponse from(Room room, String hostName, int liveCount) {
             return new RoomResponse(
                     room.getRoomId(),
                     room.getHostId(),
@@ -81,9 +98,12 @@ public class RoomController {
                     room.getDescription(),
                     room.getCapacity(),
                     room.getTotalMembers(),
+                    room.getTotalJoins(),
+                    liveCount,
                     room.getStatus().name().toLowerCase(),
                     room.isPrivate(),
                     room.isFull(),
+                    room.getThemeId(),
                     room.getTags().stream().map(Tag::getName).sorted().toList(),
                     room.getCreatedAt()
             );
@@ -103,7 +123,10 @@ public class RoomController {
         String hostName = userRepository.findById(room.getHostId())
                 .map(User::getDisplayName)
                 .orElse("Anonymous Farmer");
-        return RoomResponse.from(room, hostName);
+        // How many distinct users are connected to this room right now. This is an
+        // in-memory lookup (no DB hit), so it's cheap even when listing every room.
+        int liveCount = presenceService.presentUsers(room.getRoomId()).size();
+        return RoomResponse.from(room, hostName, liveCount);
     }
 
     // -------------------------------------------------------------------------
@@ -163,6 +186,18 @@ public class RoomController {
         Room room = roomService.updateRoom(
                 roomId, req.requesterId(), req.name(), req.description(), req.capacity()
         );
+        return toResponse(room);
+    }
+
+    // Change just the room's scene/environment. We keep this separate from the
+    // general updateRoom (name/capacity) because the rules differ: any member can
+    // restyle the room, and we don't want to require the host's other fields here.
+    @PatchMapping("/{roomId}/theme")
+    public RoomResponse updateTheme(
+            @PathVariable UUID roomId,
+            @Valid @RequestBody UpdateThemeRequest req
+    ) {
+        Room room = roomService.updateTheme(roomId, req.requesterId(), req.themeId());
         return toResponse(room);
     }
 

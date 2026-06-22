@@ -6,6 +6,7 @@ import homeIcon from "@/assets/menu/home.svg"
 import profileIcon from "@/assets/menu/profile.svg"
 import roomsIcon from "@/assets/menu/rooms.svg"
 import signoutIcon from "@/assets/menu/signout.svg"
+import { playSfx } from "@/lib/sfx";
 type Item = { label: string; icon: StaticImageData; href: string };
 
 const ITEMS: Item[] = [
@@ -42,7 +43,7 @@ export default function NavMenu() {
 
       {/* Backdrop */}
       <div
-        onClick={() => setOpen(false)}
+        onClick={() => { playSfx("cancel"); setOpen(false); }}
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
@@ -59,7 +60,8 @@ export default function NavMenu() {
           <button
             type="button"
             aria-label="Close menu"
-            onClick={() => setOpen(false)}
+            data-sfx="off"
+            onClick={() => { playSfx("cancel"); setOpen(false); }}
             className="w-8 h-8 flex items-center justify-center border-[3px] border-panel-stroke bg-wood-light font-press text-[10px] active:translate-y-[2px]"
           >
             ✕
@@ -71,7 +73,7 @@ export default function NavMenu() {
             <a
               key={item.label}
               href={item.href}
-              onClick={() => setOpen(false)}
+              onClick={() => { playSfx("select"); setOpen(false); }}
               className="flex items-center gap-3 px-3 py-3 border-[3px] border-panel-stroke bg-wood-light font-pixelify text-lg text-ink hover:bg-sun active:translate-y-[2px] active:shadow-none shadow-pixel-sm"
             >
               <Image src={item.icon} alt="" className="w-10 h-10" />

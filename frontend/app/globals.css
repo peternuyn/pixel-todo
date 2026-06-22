@@ -150,6 +150,89 @@
 .animate-banner { animation: badge-banner-in 0.35s ease-out both; }
 
 /*
+ * Landing-page flourishes — entrance reveals, idle floats, the strolling farm
+ * animals, and the interactive feature-card / CTA polish. All pure CSS so the
+ * landing page can stay a fast server component.
+ */
+
+/* Fade + rise on load. Stagger siblings with an inline animation-delay. */
+@keyframes rise-in {
+  0%   { opacity: 0; transform: translateY(26px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Gentle idle bob — logo, hero cat, sun, floating sparkles. */
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.animate-float { animation: float-soft 3.6s ease-in-out infinite; }
+
+/* A farm friend strolls the full width of the horizon band, then loops. */
+@keyframes walk-across {
+  from { transform: translateX(-14vw); }
+  to   { transform: translateX(110vw); }
+}
+.animate-walk { animation: walk-across 24s linear infinite; }
+
+/* Soft butter glow that pulses on the primary call-to-action. */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 3px 0 0 #173E2B, 0 0 0 0 rgba(255, 214, 107, 0); }
+  50%      { box-shadow: 0 3px 0 0 #173E2B, 0 0 18px 5px rgba(255, 214, 107, 0.55); }
+}
+.cta-glow { animation: cta-pulse 2.4s ease-in-out infinite; }
+
+/* Feature cards: a clean lift on hover (no icon animation). */
+.feature-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 10px 0 0 #173E2B,
+    inset 0 -6px 0 0 #AEE7BC,
+    0 18px 0 0 rgba(23, 62, 43, 0.25);
+}
+
+/*
+ * Parallax: <ParallaxScene> publishes --parallax-x/y (each in [-1, 1]) on a
+ * shared ancestor; each <ParallaxLayer> translates by its own --depth-x/y. The
+ * variables default to 0, so this is inert during SSR and without a scene above.
+ */
+.parallax-layer {
+  transform: translate3d(
+    calc(var(--parallax-x, 0) * var(--depth-x, 0px)),
+    calc(var(--parallax-y, 0) * var(--depth-y, 0px)),
+    0
+  );
+  will-change: transform;
+}
+
+/* CRT scanline wash for retro-console flavour — faint, so text stays legible. */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(23, 62, 43, 0.06) 0,
+    rgba(23, 62, 43, 0.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.45;
+}
+
+/* Respect users who prefer reduced motion: drop loops, reveals, and parallax. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-float,
+  .animate-walk,
+  .cta-glow {
+    animation: none;
+  }
+  .animate-rise { opacity: 1; transform: none; }
+  .parallax-layer { transform: none; }
+}
+
+/*
  * Accessible keyboard focus ring — a hard butter-yellow outline that fits the
  * pixel theme. It only appears for KEYBOARD users (:focus-visible), so mouse
  * users with the cat-paw cursor never see it, but tabbing through controls now

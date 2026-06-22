@@ -3,6 +3,8 @@ import { Press_Start_2P, VT323, Pixelify_Sans, Silkscreen, Jersey_10 } from "nex
 import "./globals.css";
 import Providers from "./providers";
 import BadgeToaster from "@/components/BadgeToaster";
+import SoundToggle from "@/components/SoundToggle";
+import ButtonSfx from "@/components/ButtonSfx";
 
 const pressStart = Press_Start_2P({
   weight: "400",
@@ -39,7 +41,7 @@ const jersey = Jersey_10({
 });
 
 export const metadata: Metadata = {
-  title: "Meowdow Study Farm",
+  title: "Leap and Bound",
   description: "A cozy pixel-art study room with your farm cat companion",
 };
 
@@ -55,6 +57,8 @@ export default function RootLayout({
       >
         <Providers>
           <BadgeToaster />
+          <SoundToggle />
+          <ButtonSfx />
           {children}
         </Providers>
       </body>

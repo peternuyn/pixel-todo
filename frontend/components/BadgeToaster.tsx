@@ -4,12 +4,13 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getStoredUser } from "@/lib/api";
 import { subscribeUser } from "@/lib/ws";
+import { playSfx } from "@/lib/sfx";
 import type { Badge } from "@/lib/user";
 
 /**
  * Listens for "you just earned a badge" events pushed from the backend over
  * WebSocket (/topic/users/{userId}/badges) and pops a celebratory toast — with a
- * pop-in animation, a sparkle burst, and a little 8-bit chime — the instant one
+ * pop-in animation, a sparkle burst, and the unlock sound effect — the instant one
  * arrives. No page reload needed.
  *
  * Mounted once in the root layout (inside Providers) so it works on every page. It's
@@ -26,22 +27,6 @@ const SPARKLES = [
   { left: "50%", top: "2%", dx: "0px", dy: "-22px", delay: "0.06s" },
 ];
 
-// The badge unlock-new-award sound.
-const UNLOCK_NEW_AWARD_SOUND = "/sounds/unlock-new-award.wav";
-
-/** Play the badge-unlock sound effect. */
-function playUnlockNewAwardSound() {
-  try {
-    const audio = new Audio(UNLOCK_NEW_AWARD_SOUND);
-    audio.volume = 0.6;
-    // play() rejects if the browser blocks audio before any user gesture — the
-    // visual toast is enough on its own, so we swallow that.
-    void audio.play().catch(() => {});
-  } catch {
-    // Audio unavailable — ignore.
-  }
-}
-
 export default function BadgeToaster() {
   const queryClient = useQueryClient();
   // Each toast is a badge plus a unique id so we can dismiss it individually.
@@ -55,7 +40,7 @@ export default function BadgeToaster() {
     const unsubscribe = subscribeUser<Badge>(user.userId, "badges", (badge) => {
       const id = Date.now() + Math.random();
       setToasts((prev) => [...prev, { id, badge }]);
-      playUnlockNewAwardSound();
+      playSfx("badge");
 
       // Refresh the profile's badge list so the new badge shows up there too.
       queryClient.invalidateQueries({ queryKey: ["badges", user.userId] });

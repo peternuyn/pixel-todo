@@ -8,7 +8,7 @@ import theme3 from "@/assets/theme-room3.svg";
 import theme4 from "@/assets/theme-room4.svg";
 import WalkingPet from "./WalkingPet";
 import waterBg from "@/assets/gifs/water-background.gif";
-import { petApi, userApi, roomPresenceApi, PresenceEvent } from "@/lib/api";
+import { petApi, userApi, roomApi, roomPresenceApi, getStoredUser, PresenceEvent } from "@/lib/api";
 import { petWalkSrc } from "@/lib/pets";
 import { subscribeRoom } from "@/lib/ws";
 import { userTopPercent, userWalkSpeed } from "@/lib/userHash";
@@ -39,7 +39,39 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [walkers, setWalkers] = useState<Walker[]>([]);
 
-  const activeTheme = THEMES.find((t) => t.id === themeId)!;
+  const activeTheme = THEMES.find((t) => t.id === themeId) ?? THEMES[2];
+
+  // When the room opens, load its *saved* environment so everyone sees the same
+  // scene the host/members last picked (and so it matches the card on the rooms
+  // list). Falls back silently to the default theme if the fetch fails.
+  useEffect(() => {
+    if (!roomId) return;
+    let active = true;
+    roomApi
+      .get(roomId)
+      .then((room) => {
+        if (active && room.themeId) setThemeId(room.themeId);
+      })
+      .catch((err) => console.error("[FarmScene] Failed to load room theme:", err));
+    return () => {
+      active = false;
+    };
+  }, [roomId]);
+
+  // Apply a theme change locally (instant feedback) and persist it to the backend
+  // so it sticks for everyone and updates the room card. We update the UI first
+  // and only log if the save fails — a cosmetic setting isn't worth a blocking
+  // error, and the previous value is still safely stored server-side.
+  function changeTheme(nextThemeId: number) {
+    setThemeId(nextThemeId);
+    setDropdownOpen(false);
+    if (!roomId) return;
+    const user = getStoredUser();
+    if (!user) return;
+    roomApi
+      .setTheme(roomId, user.userId, nextThemeId)
+      .catch((err) => console.error("[FarmScene] Failed to save room theme:", err));
+  }
 
   // Cache to avoid re-fetching on every useEffect.
   const petMapRef = useRef<Map<string, string> | null>(null);
@@ -299,7 +331,7 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => { setThemeId(t.id); setDropdownOpen(false); }}
+                onClick={() => changeTheme(t.id)}
                 className={`px-3 py-2 font-silk text-[9px] text-left hover:bg-sun/50 active:bg-sun ${themeId === t.id ? "bg-sun/30 font-bold" : ""}`}
               >
                 {themeId === t.id ? "✓ " : "  "}{t.label}

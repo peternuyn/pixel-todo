@@ -68,6 +68,7 @@ public class RoomService {
         // membership row and count the host as the first member.
         belongRoomRepository.save(BelongRoom.of(hostId, saved.getRoomId(), "host"));
         saved.incrementMembers();
+        saved.incrementJoins(); // the host is the room's first all-time join
 
         // Hosting any room earns the Homesteader badge (idempotent after the first).
         badgeService.award(hostId, BadgeType.HOMESTEADER);
@@ -129,6 +130,7 @@ public class RoomService {
 
         belongRoomRepository.save(BelongRoom.of(userId, roomId, "member"));
         room.incrementMembers();
+        room.incrementJoins(); // count this as an all-time join (not undone on leave)
 
         // Joining unlocks Good Neighbor (first join) and eventually Social Butterfly
         // (10 different rooms) — evaluateForUser counts the user's memberships.
@@ -170,6 +172,32 @@ public class RoomService {
         room.setName(name);
         room.setDescription(description);
         room.setCapacity(capacity);
+        return room;
+    }
+
+    /**
+     * Change the room's shared scene (its "environment"). Unlike name/capacity,
+     * the theme is a collaborative, purely-cosmetic setting, so we let ANY member
+     * of the room change it — not only the host. We still check membership so a
+     * stranger who isn't in the room can't reskin it.
+     *
+     * Because this method is @Transactional and we mutate a managed entity, JPA's
+     * "dirty checking" flushes the UPDATE automatically when the transaction
+     * commits — we don't have to call roomRepository.save() ourselves.
+     */
+    @Transactional
+    public Room updateTheme(UUID roomId, UUID requesterId, int themeId) {
+        if (themeId < 1 || themeId > 4) {
+            throw new IllegalArgumentException("themeId must be between 1 and 4");
+        }
+
+        Room room = getById(roomId);
+
+        if (!belongRoomRepository.existsByIdUserIdAndIdRoomId(requesterId, roomId)) {
+            throw new IllegalArgumentException("Only members of the room can change its theme");
+        }
+
+        room.setThemeId(themeId);
         return room;
     }
 

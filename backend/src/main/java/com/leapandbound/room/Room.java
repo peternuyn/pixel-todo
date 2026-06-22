@@ -46,6 +46,16 @@ public class Room {
     @Builder.Default
     private int totalMembers = 0;
 
+    /**
+     * All-time number of joins. Unlike {@link #totalMembers} (which counts who is
+     * CURRENTLY in the room and so decreases when people leave), this only ever
+     * goes UP. It's what powers the "20 people have joined" line on the room card —
+     * a piece of social proof that shouldn't shrink the moment someone steps out.
+     */
+    @Column(name = "total_joins", nullable = false)
+    @Builder.Default
+    private int totalJoins = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 8)
     @Builder.Default
@@ -53,6 +63,19 @@ public class Room {
 
     @Column(name = "password_hash")
     private String passwordHash;
+
+    /**
+     * Which farm scene this room shows: 1=Meadow, 2=Sunset, 3=Forest, 4=Night.
+     * It's the room's *shared* environment — when anyone in the room picks a new
+     * theme, we save it here so (a) the next person to open the room sees the same
+     * scene, and (b) the rooms list can show a matching banner on the card.
+     *
+     * We store it as a plain int (not an enum) because the frontend already thinks
+     * in these numeric ids, and the CHECK constraint in the DB keeps it in 1..4.
+     */
+    @Column(name = "theme_id", nullable = false)
+    @Builder.Default
+    private int themeId = 3;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -101,6 +124,11 @@ public class Room {
 
     public void incrementMembers() {
         this.totalMembers++;
+    }
+
+    /** Bump the all-time join counter. Call this whenever a NEW membership is created. */
+    public void incrementJoins() {
+        this.totalJoins++;
     }
 
     public void decrementMembers() {

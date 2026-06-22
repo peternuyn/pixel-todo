@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { subscribeRoom, publishRoom } from "@/lib/ws";
 import { colorForUser } from "@/lib/colors";
+import { isSfxMuted, onSfxMutedChange } from "@/lib/sfx";
 
 // The shared drawing surface for one room. Like RoomTodo it keeps the DURABLE state
 // (finished strokes/text) in a TanStack Query cache that the WebSocket keeps in sync.
@@ -62,6 +63,10 @@ export default function Whiteboard({ roomId }: { roomId: string | null }) {
 
   const lastCursor = useRef(0);
   const lastDraw = useRef(0);
+
+  // Looping pencil sound played ONLY for this user while they draw a stroke. It's a
+  // purely local sound effect — never broadcast — so peers don't hear your scribbling.
+  const drawSoundRef = useRef<HTMLAudioElement | null>(null);
 
   const boardKey = ["roomWhiteboard", roomId] as const;
 
@@ -139,6 +144,23 @@ export default function Whiteboard({ roomId }: { roomId: string | null }) {
     return () => clearInterval(id);
   }, []);
 
+  // ----- local pencil sound (this user only) --------------------------------
+  // Create the audio once, in the browser. Looping so a long stroke sounds
+  // continuous; we pause it the instant the stroke ends (see handleUp).
+  useEffect(() => {
+    const audio = new Audio("/sounds/draw.mp3");
+    audio.loop = true;
+    audio.volume = 0.5;
+    drawSoundRef.current = audio;
+    // If the user mutes mid-stroke, silence the loop right away.
+    const offMute = onSfxMutedChange((m) => { if (m) audio.pause(); });
+    return () => {
+      offMute();
+      audio.pause();
+      drawSoundRef.current = null;
+    };
+  }, []);
+
   // ----- pointer helpers ----------------------------------------------------
   // Normalized {x,y} of the pointer (0..1), or null if it's off-canvas.
   function pointer(): { x: number; y: number } | null {
@@ -170,6 +192,13 @@ export default function Whiteboard({ roomId }: { roomId: string | null }) {
 
     drawingRef.current = true;
     setLocalStroke([p.x, p.y]);
+
+    // Start the pencil sound for ourselves (others never hear it), unless muted.
+    const sound = drawSoundRef.current;
+    if (sound && !isSfxMuted()) {
+      sound.currentTime = 0;
+      void sound.play().catch(() => {});
+    }
   }
 
   function handleMove() {
@@ -211,6 +240,7 @@ export default function Whiteboard({ roomId }: { roomId: string | null }) {
   function handleUp() {
     if (!drawingRef.current || !myId) return;
     drawingRef.current = false;
+    drawSoundRef.current?.pause(); // stop the local pencil sound
     const pts = localStroke;
     setLocalStroke(null);
     if (!pts || pts.length < 4) return; // a dot/click, not a stroke — discard
