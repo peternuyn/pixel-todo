@@ -39,12 +39,54 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-studyfarm}
       # The public URL of your frontend, for CORS. Set this in .env on the server.
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
-    ports:
-      - "8080:8080"
+    # No "ports:" here anymore. The backend is reached only through Caddy on the
+    # internal Docker network, so it is NOT exposed to the public internet directly.
+    # (Add "ports: - 127.0.0.1:8080:8080" temporarily if you need to curl it locally.)
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # Nginx: the HTTPS reverse proxy. The browser talks to this over 443 (TLS),
+  # and Nginx forwards plain HTTP to the backend container on the internal
+  # network. It uses certificates issued by the certbot service below.
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: leap-and-bound-nginx
+    ports:
+      - "80:80"   # ACME HTTP-01 challenge + HTTP->HTTPS redirect
+      - "443:443" # the real HTTPS traffic
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_certs:/etc/letsencrypt:ro      # where certbot puts the certs
+      - certbot_www:/var/www/certbot:ro        # ACME challenge webroot
+    depends_on:
+      - backend
+    restart: unless-stopped
+    # Reload every 6h so renewed certs are picked up with no downtime.
+    command: >-
+      /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+
+  # ---------------------------------------------------------------------------
+  # Certbot: obtains and auto-renews the Let's Encrypt certificate. After the
+  # one-time bootstrap (scripts/init-letsencrypt.sh), this just loops forever
+  # running "certbot renew" twice a day; it only acts when a cert is near expiry.
+  # ---------------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot
+    container_name: leap-and-bound-certbot
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: >-
+      /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done"
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  certbot_certs:
+  certbot_www:
