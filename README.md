@@ -43,3 +43,7 @@ Open http://localhost:3000.
 - DB credentials live in [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties) — change them for production via env vars or a profile.
 - The Postgres data volume `studyfarm-pgdata` persists between `docker compose down/up`. Use `docker compose down -v` to wipe.
 # pixel-todo
+
+
+docker exec -it leap-and-bound-postgres psql -U studyfarm -d studyfarm
+docker exec -it leap-and-bound-postgres psql -U studyfarm -d studyfarm -f seed.sql

@@ -68,8 +68,8 @@ services:
       - backend
     restart: unless-stopped
     # Reload every 6h so renewed certs are picked up with no downtime.
-    command: >-
-      /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    # (busybox sh in the alpine image doesn't support ${!}, so keep this simple.)
+    command: sh -c "while :; do sleep 6h; nginx -s reload; done & nginx -g 'daemon off;'"
 
   # ---------------------------------------------------------------------------
   # Certbot: obtains and auto-renews the Let's Encrypt certificate. After the
