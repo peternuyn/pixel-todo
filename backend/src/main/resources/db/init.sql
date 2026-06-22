@@ -40,7 +40,7 @@ CREATE TABLE rooms (
     capacity       INT          NOT NULL DEFAULT 10,
     total_members  INT          NOT NULL DEFAULT 0,   -- people CURRENTLY in the room 
     total_joins    INT          NOT NULL DEFAULT 0,   -- all-time joins (only ever goes up)
-    status         VARCHAR(8)   NOT NULL DEFAULT 'public' CHECK (status IN ('public', 'private')),
+    status         VARCHAR(8)   NOT NULL DEFAULT 'PUBLIC' CHECK (status IN ('PUBLIC', 'PRIVATE')),
     password_hash  TEXT,                        -- NULL for public rooms
     -- Which farm scene the room shows (1=Meadow, 2=Sunset, 3=Forest, 4=Night).
     -- This is the room's shared "environment"; everyone in the room sees it, and

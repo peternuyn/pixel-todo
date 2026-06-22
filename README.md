@@ -46,4 +46,4 @@ Open http://localhost:3000.
 
 
 docker exec -it leap-and-bound-postgres psql -U studyfarm -d studyfarm
-docker exec -it leap-and-bound-postgres psql -U studyfarm -d studyfarm -f seed.sql
+DOMAIN=47.130.126.2.sslip.io EMAIL=vietthanh@gmail.com ./scripts/init-letsencrypt.sh
