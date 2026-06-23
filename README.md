@@ -1,49 +1,39 @@
-# Meowdow Study Farm
+# LEAP AND BOUND
 
-A pixel-art study room with a cat companion. Frontend in Next.js, backend in Spring Boot.
+A gamified "study with me" web app where a pet companion grows alongside your focus sessions.
+
+## The story
+
+This started as a side project between me and my girlfriend Sunny, who studies marketing. We wanted a "study with me" product that we'd actually use ourselves, so we built one.
+
+The harder problem wasn't the studying but it was getting people to come back. That's where Sunny ideas shaped the product. We drew heavily on features from apps like **Duolingo** and **Stick-it-with-Robert**: streaks, achievements, and a companion that reacts to your habits, turning a plain timer into something you don't want to break.
+
+I handled the full stack and deployment; she drove the product design, feature wises and growth thinking.
+
+## Tech stack
+
+- **Frontend:** Next.js 16, TypeScript, Tailwind CSS
+- **Backend:** Spring Boot 4, Java 21, Maven
+- **Database:** PostgreSQL
+- **Infra:** Docker Compose, Nginx as a reverse proxy
 
 ## Structure
 
 ```
 .
 ├── frontend/          # Next.js 16 + Tailwind + TypeScript
-├── backend/           # Spring Boot 4 + Java 21 + Maven (Web, JPA, Postgres, Lombok)
-└── docker-compose.yml # Postgres for local dev
+├── backend/           # Spring Boot 4 + Java 21 + Maven
+├── nginx/             # Reverse proxy config
+├── scripts/           # Deployment helpers (SSL, etc.)
+└── docker-compose.yml # Postgres for local dev, backend for easier deployment
 ```
 
-## Run everything locally
-
-### 1. Start Postgres
+## Deployment
 
 ```bash
-docker compose up -d
-```
-
-### 2. Backend (`:8080`)
-
-```bash
-cd backend
-./mvnw spring-boot:run
-```
-
-Health check: http://localhost:8080/api/health
-
-### 3. Frontend (`:3000`)
-
-```bash
-cd frontend
-npm run dev
-```
-
-Open http://localhost:3000.
-
-## Notes
-
-- CORS is configured in [backend/src/main/java/com/meowdow/studyfarm/WebConfig.java](backend/src/main/java/com/meowdow/studyfarm/WebConfig.java) to accept requests from `http://localhost:3000`.
-- DB credentials live in [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties) — change them for production via env vars or a profile.
-- The Postgres data volume `studyfarm-pgdata` persists between `docker compose down/up`. Use `docker compose down -v` to wipe.
-# pixel-todo
-
-
+# Connect to the database
 docker exec -it leap-and-bound-postgres psql -U studyfarm -d studyfarm
-DOMAIN=47.130.126.2.sslip.io EMAIL=vietthanh@gmail.com ./scripts/init-letsencrypt.sh
+
+# Provision SSL certificates
+DOMAIN=your-domain.example EMAIL=you@example.com ./scripts/init-letsencrypt.sh
+```
