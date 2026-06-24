@@ -5,6 +5,7 @@ import Providers from "./providers";
 import BadgeToaster from "@/components/BadgeToaster";
 import SoundToggle from "@/components/SoundToggle";
 import ButtonSfx from "@/components/ButtonSfx";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const pressStart = Press_Start_2P({
   weight: "400",
@@ -52,16 +53,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+    
       <body
         className={`${pressStart.variable} ${vt323.variable} ${pixelify.variable} ${silkscreen.variable} ${jersey.variable}`}
       >
         <Providers>
+          
           <BadgeToaster />
           <SoundToggle />
           <ButtonSfx />
           {children}
         </Providers>
+        <SpeedInsights />
       </body>
+      
     </html>
   );
 }
