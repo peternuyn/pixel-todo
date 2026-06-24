@@ -118,6 +118,28 @@ export default function FarmScene({ roomId }: { roomId: string | null }) {
           const map = new Map(pets.map((p) => [p.petId, p.spriteKey]));
           petMapRef.current = map;
         }
+        if (!active) return;
+
+        // Always seed OUR OWN walker immediately, independent of presence. We know
+        // who we are from local storage, so we shouldn't wait on the presence
+        // snapshot (which can resolve before our WebSocket SUBSCRIBE registers us)
+        // or on our own "join" broadcast (which we can miss if another room channel
+        // — timer/chat — subscribes before the presence channel is live). Without
+        // this, a freshly registered user often never sees their own character.
+        const me = getStoredUser();
+        if (me) {
+          const mySpriteKey = petMapRef.current?.get(me.petId ?? "") ?? null;
+          const myWalker: Walker = {
+            userId: me.userId,
+            displayName: me.displayName,
+            walkSrc: petWalkSrc(mySpriteKey),
+            top: `${userTopPercent(me.userId)}%`,
+            speed: userWalkSpeed(me.userId),
+          };
+          setWalkers((prev) =>
+            prev.some((w) => w.userId === me.userId) ? prev : [...prev, myWalker]
+          );
+        }
 
         // Get who's in the room right now.
         const presentIds = await roomPresenceApi.snapshot(roomId);
