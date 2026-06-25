@@ -61,7 +61,7 @@ export default function HomePage() {
         <section className="relative flex flex-col items-center justify-center text-center px-6 pt-20 pb-10 gap-6 max-w-2xl mx-auto">
           <Image
             src={Logo.src}
-            alt="Leap and Bound"
+            alt="Leaf and Bound"
             width={140}
             height={130}
             unoptimized
@@ -71,7 +71,7 @@ export default function HomePage() {
 
           <div className="animate-rise" style={{ animationDelay: "0.05s" }}>
             <h1 className="font-jersey text-5xl sm:text-6xl text-ink [text-shadow:3px_3px_0_#FFD66B] leading-tight">
-              Leap and Bound
+              Leaf and Bound
             </h1>
             <p className="font-press text-[9px] tracking-widest text-wood-dark mt-2">
               FOCUS · GROW · HARVEST

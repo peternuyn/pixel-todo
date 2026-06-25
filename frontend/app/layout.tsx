@@ -42,7 +42,7 @@ const jersey = Jersey_10({
 });
 
 export const metadata: Metadata = {
-  title: "Leap and Bound",
+  title: "Leaf and Bound",
   description: "A cozy pixel-art study room with your farm cat companion",
 };
 
