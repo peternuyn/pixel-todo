@@ -8,7 +8,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: leap-and-bound-postgres
+    container_name: leaf-and-bound-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-studyfarm}
       POSTGRES_USER: ${POSTGRES_USER:-studyfarm}
@@ -32,7 +32,7 @@ services:
     build:
       context: ./backend       
       dockerfile: Dockerfile
-    container_name: leap-and-bound-backend
+    container_name: leaf-and-bound-backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-studyfarm}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-studyfarm}
@@ -56,7 +56,7 @@ services:
   # ---------------------------------------------------------------------------
   nginx:
     image: nginx:1.27-alpine
-    container_name: leap-and-bound-nginx
+    container_name: leaf-and-bound-nginx
     ports:
       - "80:80"   # ACME HTTP-01 challenge + HTTP->HTTPS redirect
       - "443:443" # the real HTTPS traffic
@@ -78,7 +78,7 @@ services:
   # ---------------------------------------------------------------------------
   certbot:
     image: certbot/certbot
-    container_name: leap-and-bound-certbot
+    container_name: leaf-and-bound-certbot
     volumes:
       - certbot_certs:/etc/letsencrypt
       - certbot_www:/var/www/certbot
