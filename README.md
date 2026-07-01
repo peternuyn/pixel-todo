@@ -2,7 +2,7 @@
 
 A gamified "study with me" web app where a pet companion grows alongside your focus sessions.
 ACCESS THROUGH THIS:
-https://pixel-todo-one.vercel.app/
+https://leafandbound.com/
 
 ## The story
 
