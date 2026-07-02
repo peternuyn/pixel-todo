@@ -8,11 +8,11 @@
 		<version>3.5.14</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.leap-and-bound</groupId>
-	<artifactId>leap-and-bound</artifactId>
+	<groupId>com.leaf-and-bound</groupId>
+	<artifactId>leaf-and-bound</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>leap-and-bound</name>
-	<description>leap-and-bound backend</description>
+	<name>leaf-and-bound</name>
+	<description>leaf-and-bound backend</description>
 	<url/>
 	<licenses>
 		<license/>
