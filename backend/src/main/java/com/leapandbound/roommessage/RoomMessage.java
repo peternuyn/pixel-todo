@@ -41,8 +41,18 @@ public class RoomMessage {
 
     // Who sent the message (FK to users.user_id). Also updatable = false — the
     // author of a message never changes.
-    @Column(name = "user_id", nullable = false, updatable = false)
+    //
+    // nullable = true: an AI message (senderType == AI) has NO human author, so this
+    // is null for those rows. Every human ('USER') message always fills it in.
+    @Column(name = "user_id", nullable = true, updatable = false)
     private UUID userId;
+
+    // Who wrote this: a human ('USER') or the Gemini assistant ('AI'). Persisted by
+    // its NAME via @Enumerated(EnumType.STRING) — same convention as Room.status and
+    // RoomTimer.state. Defaults to USER in @PrePersist when the caller doesn't set it.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sender_type", nullable = false, updatable = false)
+    private SenderType senderType;
 
     // The message text. We map it to a Postgres TEXT column (no length cap in the
     // DB) but still bound it with @Size so the API rejects absurdly long input
@@ -64,6 +74,10 @@ public class RoomMessage {
     void onCreate() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
+        }
+        // Be safe: a message with no explicit type is a normal human message.
+        if (senderType == null) {
+            senderType = SenderType.USER;
         }
     }
 }

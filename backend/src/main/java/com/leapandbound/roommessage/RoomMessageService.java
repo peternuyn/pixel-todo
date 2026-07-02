@@ -1,5 +1,6 @@
 package com.leapandbound.roommessage;
 
+import com.leapandbound.ai.GeminiClient;
 import com.leapandbound.membership.BelongRoomRepository;
 import com.leapandbound.room.RoomService;
 import com.leapandbound.user.User;
@@ -8,6 +9,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,6 +39,8 @@ public class RoomMessageService {
     private final BelongRoomRepository belongRoomRepository;
     // Used to turn the sender's UUID into a display name / avatar for the UI.
     private final UserRepository userRepository;
+    // Calls the Gemini API for the "/ai <question>" chat command.
+    private final GeminiClient geminiClient;
 
     // -------------------------------------------------------------------------
     // Read
@@ -73,6 +77,69 @@ public class RoomMessageService {
                 .roomId(roomId)
                 .userId(userId)
                 .content(content)
+                .build();
+
+        return roomMessageRepository.save(message);
+    }
+
+    // -------------------------------------------------------------------------
+    // AI assistant ("/ai <question>")
+    // -------------------------------------------------------------------------
+
+    /**
+     * Both halves of one "/ai" exchange: the human's {@code question} and the AI's
+     * {@code answer}. Returning them together lets the controller broadcast both new
+     * messages to the room in the right order.
+     */
+    public record AiExchange(RoomMessage question, RoomMessage answer) {}
+
+    /**
+     * Handle a "/ai" command: save the asker's question as a normal message, ask Gemini,
+     * then save its reply as an AI message. Everything runs in ONE transaction, so if the
+     * AI message fails to save we don't leave a lonely question behind.
+     *
+     * Note we make the SLOW Gemini network call INSIDE the transaction for simplicity. For
+     * a hobby/learning app that's fine; a high-traffic app would call the API first and open
+     * the DB transaction only around the two quick saves, to avoid holding a DB connection
+     * while waiting on the network.
+     */
+    @Transactional
+    public AiExchange askAi(UUID roomId, UUID userId, String prompt) {
+        roomService.getById(roomId);            // 404 if the room id is bogus
+        requireMember(roomId, userId);          // you must be in the room to use /ai
+
+        // 1. The question, posted under the asker's own name (so the room sees who asked).
+        RoomMessage question = createMessage(roomId, userId, prompt);
+
+        // 2. Ask Gemini. This never throws — a failure comes back as a friendly message.
+        String answerText = geminiClient.generate(prompt);
+
+        // 3. The AI's reply, authored by "the AI" (no human user_id). We stamp its time
+        //    as 1ms AFTER the question so the two always sort next to each other when the
+        //    chat log is loaded oldest-first — even if another member posts during the
+        //    (slow) Gemini call. The UI pairs an answer with the message right before it,
+        //    so keeping them adjacent keeps that "question + answer" card correct on reload.
+        RoomMessage answer = createAiMessage(roomId, answerText,
+                question.getCreatedAt().plusNanos(1_000_000));
+
+        return new AiExchange(question, answer);
+    }
+
+    /**
+     * Save a message written by the AI. Unlike {@link #createMessage}, there is no member
+     * check (the AI isn't a room member) and no userId — {@code senderType = AI} marks who
+     * wrote it, and {@code userId} stays null. We pass an explicit {@code createdAt} (rather
+     * than letting @PrePersist default it to "now") so the answer sits right after its
+     * question in time order.
+     */
+    @Transactional
+    public RoomMessage createAiMessage(UUID roomId, String content, OffsetDateTime createdAt) {
+        RoomMessage message = RoomMessage.builder()
+                .roomId(roomId)
+                .userId(null)
+                .senderType(SenderType.AI)
+                .content(content)
+                .createdAt(createdAt)
                 .build();
 
         return roomMessageRepository.save(message);

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -71,7 +72,16 @@ public class RoomMessageController {
             String avatarUrl,
             String content,
             OffsetDateTime createdAt,
-            Map<String, List<UUID>> reactions
+            Map<String, List<UUID>> reactions,
+            // true when this message was written by the Gemini AI assistant (userId is
+            // then null). The frontend uses this to give AI replies their own look.
+            boolean isAi
+    ) {}
+
+    /** Body for the "/ai" command: which user is asking, and their question. */
+    record AskAiRequest(
+            @NotNull UUID userId,
+            @NotBlank @Size(max = 1000) String prompt
     ) {}
 
     /**
@@ -107,7 +117,12 @@ public class RoomMessageController {
         // Batch-load everything the response needs in just two extra queries (one
         // for reactions, one for users) instead of two PER message.
         List<UUID> messageIds = messages.stream().map(RoomMessage::getMessageId).toList();
-        List<UUID> senderIds = messages.stream().map(RoomMessage::getUserId).distinct().toList();
+        // AI messages have a null userId, so filter those out before looking up senders.
+        List<UUID> senderIds = messages.stream()
+                .map(RoomMessage::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
         Map<UUID, Map<String, List<UUID>>> reactions = roomMessageService.reactionsByMessage(messageIds);
         Map<UUID, User> senders = roomMessageService.usersByIds(senderIds);
 
@@ -150,6 +165,31 @@ public class RoomMessageController {
         return reactions;
     }
 
+    /**
+     * POST /api/rooms/{roomId}/messages/ai — the "/ai" command. Saves the asker's
+     * question, asks Gemini, saves the reply, and broadcasts BOTH new messages to the
+     * room (question first, then answer) so every open browser sees the exchange live.
+     * Returns the AI's answer to the caller.
+     */
+    @PostMapping("/ai")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ChatMessageResponse askAi(
+            @PathVariable UUID roomId,
+            @Valid @RequestBody AskAiRequest req
+    ) {
+        RoomMessageService.AiExchange exchange =
+                roomMessageService.askAi(roomId, req.userId(), req.prompt());
+
+        // Only the human question needs a sender lookup; the AI reply supplies its own name.
+        Map<UUID, User> asker = roomMessageService.usersByIds(List.of(req.userId()));
+        ChatMessageResponse question = toResponse(exchange.question(), asker, Map.of());
+        ChatMessageResponse answer = toResponse(exchange.answer(), Map.of(), Map.of());
+
+        broadcast(roomId, ChatEvent.created(question)); // "Alice asked: ..."
+        broadcast(roomId, ChatEvent.created(answer));   // "Gemini: ..."
+        return answer;
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -157,10 +197,21 @@ public class RoomMessageController {
     /** Build the API/WebSocket shape from an entity + the looked-up sender + reactions. */
     private ChatMessageResponse toResponse(RoomMessage m, Map<UUID, User> senders,
                                            Map<String, List<UUID>> reactions) {
-        User sender = senders.get(m.getUserId());
-        // Fall back gracefully if the author's account was since deleted.
-        String displayName = sender != null ? sender.getDisplayName() : "Unknown";
-        String avatarUrl = sender != null ? sender.getAvatarUrl() : null;
+        boolean isAi = m.getSenderType() == SenderType.AI;
+
+        String displayName;
+        String avatarUrl;
+        if (isAi) {
+            // AI messages have no user row: give them a fixed name; the frontend draws
+            // its own "Gemini" avatar, so we don't need an avatar URL.
+            displayName = "Gemini";
+            avatarUrl = null;
+        } else {
+            User sender = senders.get(m.getUserId());
+            // Fall back gracefully if the author's account was since deleted.
+            displayName = sender != null ? sender.getDisplayName() : "Unknown";
+            avatarUrl = sender != null ? sender.getAvatarUrl() : null;
+        }
 
         return new ChatMessageResponse(
                 m.getMessageId(),
@@ -170,7 +221,8 @@ public class RoomMessageController {
                 avatarUrl,
                 m.getContent(),
                 m.getCreatedAt(),
-                reactions
+                reactions,
+                isAi
         );
     }
 

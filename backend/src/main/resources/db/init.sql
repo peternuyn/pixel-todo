@@ -99,10 +99,16 @@ CREATE TABLE room_tasks (
 -- A room's CHAT LOG. One row per message, in the room everyone shares. Like
 -- room_tasks, ownership/links are raw UUIDs, and ON DELETE CASCADE means deleting
 -- a room (or a user) sweeps away their messages too — no orphan rows left behind.
+--
+-- sender_type tells apart a normal human message ('USER') from one written by the
+-- Gemini AI assistant ('AI', posted when someone uses the "/ai <question>" command).
+-- An AI message has NO human author, so user_id is NULL for those rows — which is
+-- why user_id is nullable here (a human message always fills it in).
 CREATE TABLE room_messages (
     message_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id     UUID         NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
-    user_id     UUID         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id     UUID         REFERENCES users(user_id) ON DELETE CASCADE,  -- NULL for AI messages
+    sender_type VARCHAR(8)   NOT NULL DEFAULT 'USER' CHECK (sender_type IN ('USER', 'AI')),
     content     TEXT         NOT NULL,    -- free text; image URLs/links are rendered by the frontend
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
