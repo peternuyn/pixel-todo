@@ -270,13 +270,14 @@ export const roomTaskApi = {
 // reactions (array.includes(myUserId)) without an extra request.
 export type ChatMessageResponse = {
   messageId: string;
+  userId: string | null; // null for AI-authored messages
   roomId: string;
-  userId: string;
   displayName: string;
   avatarUrl: string | null;
   content: string;
   createdAt: string;
   reactions: Record<string, string[]>; // emoji -> [userId, ...]
+  isAi: boolean; // true when written by the Gemini assistant (via "/ai")
 };
 
 // Mirrors RoomMessageController.ChatEvent — the WebSocket push payload.
@@ -299,6 +300,17 @@ export const roomMessageApi = {
     return request<ChatMessageResponse>(`/api/rooms/${roomId}/messages`, {
       method: "POST",
       body: JSON.stringify({ userId, content }),
+    });
+  },
+
+  // The "/ai" command: post `prompt` as your question and get Gemini's reply. The
+  // backend saves + broadcasts BOTH the question and the answer to the room, so the
+  // messages arrive via the WebSocket subscription; the returned answer is only used
+  // to know the request finished. userId must belong to the room.
+  askAi(roomId: string, userId: string, prompt: string) {
+    return request<ChatMessageResponse>(`/api/rooms/${roomId}/messages/ai`, {
+      method: "POST",
+      body: JSON.stringify({ userId, prompt }),
     });
   },
 
