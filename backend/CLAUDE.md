@@ -1,1 +1,0 @@
-My purpose of this project is to learn JavaSpringboot, so please explain everything to a 2nd year CS student, make it comprehensive and explain fundamental concepts with examples.
