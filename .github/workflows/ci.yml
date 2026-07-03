@@ -114,3 +114,53 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # Deploy: SSH into the EC2 box and roll the backend to the new image.
+  # Runs only after the image is pushed. The box pulls the pre-built image from
+  # GHCR — it does NOT compile anything, so a small instance won't OOM.
+  #
+  # Required repo secrets (Settings > Secrets and variables > Actions):
+  #   EC2_HOST     public IP or DNS of the instance   (e.g. 13.54.x.x)
+  #   EC2_USER     ssh user for the AMI               (Amazon Linux: ec2-user,
+  #                                                     Ubuntu: ubuntu)
+  #   EC2_SSH_KEY  the PRIVATE key (full PEM contents) whose public half is
+  #                authorised on the box
+  #   EC2_APP_DIR  absolute path to the folder holding docker-compose.yml
+  #                on the instance (e.g. /home/ec2-user/pixel-todo)
+  #
+  # The instance's security group must allow inbound SSH (port 22) from
+  # GitHub-hosted runners — simplest is to allow 0.0.0.0/0 on 22, or restrict
+  # to GitHub's Actions IP ranges if you want it tighter.
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: read # so the box can pull the private GHCR image
+    steps:
+      - name: SSH in and roll the backend
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # Forward these into the remote shell so we can log in to GHCR.
+          envs: GHCR_USER,GHCR_TOKEN,APP_DIR
+          script: |
+            set -euo pipefail
+            cd "$APP_DIR"
+            # Log in to GHCR with the run's token (read:packages) to pull the image.
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            # Pull only the new backend image, recreate just that service.
+            docker compose pull backend
+            docker compose up -d backend
+            # Drop the now-unused old image layers.
+            docker image prune -f
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_DIR: ${{ secrets.EC2_APP_DIR }}
