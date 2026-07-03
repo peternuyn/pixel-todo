@@ -1,0 +1,116 @@
+name: CI
+
+# Run on every PR, and on pushes to main. The image is only built/pushed
+# on pushes to main (see the `docker` job's `if:` condition below).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same branch/PR to save minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Backend: compile the Spring Boot app and run any tests. `verify` also runs
+  # the full build lifecycle, so a broken compile or failing test fails the PR.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Backend build & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven # caches ~/.m2 based on pom.xml
+
+      - name: Build & test
+        run: ./mvnw -B clean verify
+
+  # ---------------------------------------------------------------------------
+  # Frontend: install deps and build. `next build` type-checks the whole app,
+  # so a type error or broken import fails here before it ever hits Vercel.
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        # If your build needs public env vars (e.g. NEXT_PUBLIC_API_URL),
+        # add them here from repo secrets:
+        # env:
+        #   NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+  # ---------------------------------------------------------------------------
+  # Docker: build the backend image and push it to GitHub Container Registry
+  # (GHCR). Runs only on pushes to main, and only if `backend` passed.
+  # Uses the built-in GITHUB_TOKEN — no extra secrets needed.
+  # On your server you then: docker compose pull backend && docker compose up -d
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Build & push backend image
+    runs-on: ubuntu-latest
+    needs: backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write # required to push to GHCR
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # metadata-action lowercases the image name automatically.
+          images: ghcr.io/${{ github.repository }}-backend
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

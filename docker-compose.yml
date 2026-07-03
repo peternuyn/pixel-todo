@@ -27,9 +27,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: ./backend       
-      dockerfile: Dockerfile
+    image: ghcr.io/peternuyn/pixel-todo-backend:latest
     container_name: leaf-and-bound-backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-studyfarm}

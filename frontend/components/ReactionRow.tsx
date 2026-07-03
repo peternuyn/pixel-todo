@@ -3,6 +3,11 @@ import type { ChatUser } from "./chatItems";
 
 const REACTION_CHOICES = ["👍", "❤️", "😂", "🎉", "✅"];
 
+// Shared "pixel press": on click the chip nudges into its own shadow, like a
+// physical button. Calm and tactile — no hover jitter.
+const PIXEL_PRESS =
+  "transition-colors active:translate-x-[2px] active:translate-y-[2px] active:shadow-none";
+
 // The reactions row shared by human bubbles and the Gemini card: existing emoji chips
 // (with counts, your own highlighted) plus an add-reaction control that stays muted
 // until you hover or focus the message.
@@ -22,6 +27,8 @@ export default function ReactionRow({
   setPaletteFor: (id: string | null) => void;
 }) {
   const emojis = Object.keys(message.reactions);
+  const paletteOpen = paletteFor === message.messageId;
+
   return (
     <div
       className={`mt-1 flex flex-wrap items-center gap-1 ${
@@ -36,34 +43,43 @@ export default function ReactionRow({
             key={emoji}
             onClick={() => react(message.messageId, emoji)}
             title={`${userIds.length} reacted`}
-            className={`px-1.5 py-0.5 text-xs border-[2px] border-panel-stroke rounded-full leading-none ${
-              reactedByMe ? "bg-sun" : "bg-white"
+            className={`flex items-center gap-1 rounded-full border-[2px] border-panel-stroke px-2 py-0.5 leading-none shadow-pixel-sm ${PIXEL_PRESS} ${
+              reactedByMe ? "bg-sun hover:bg-sun-deep" : "bg-white hover:bg-panel"
             }`}
           >
-            {emoji} {userIds.length}
+            <span className="text-xs">{emoji}</span>
+            <span className="font-press text-[8px] text-ink">{userIds.length}</span>
           </button>
         );
       })}
 
-      {paletteFor === message.messageId ? (
-        <div className="flex items-center gap-1 border-[2px] border-panel-stroke bg-white px-1.5 py-0.5 shadow-pixel-sm">
+      {paletteOpen ? (
+        <div className="flex items-center gap-0.5 rounded-full border-[2px] border-panel-stroke bg-white px-1 py-0.5 shadow-pixel-sm">
           {REACTION_CHOICES.map((emoji) => (
             <button
               key={emoji}
               onClick={() => react(message.messageId, emoji)}
-              className="text-base leading-none transition-transform hover:scale-125"
+              className="grid h-6 w-6 place-items-center rounded-full text-base leading-none transition-colors hover:bg-sun"
             >
               {emoji}
             </button>
           ))}
+          <button
+            onClick={() => setPaletteFor(null)}
+            aria-label="Close reactions"
+            className="grid h-6 w-6 place-items-center rounded-full font-press text-[9px] text-ink/40 transition-colors hover:bg-panel hover:text-ink"
+          >
+            ✕
+          </button>
         </div>
       ) : (
         <button
           onClick={() => setPaletteFor(message.messageId)}
           aria-label="Add reaction"
-          className="px-1 text-sm leading-none text-ink/30 opacity-100 transition-opacity hover:text-ink group-hover:opacity-100 sm:opacity-0 sm:focus:opacity-100"
+          className={`flex items-center gap-0.5 rounded-full border-[2px] border-panel-stroke bg-white px-2 py-0.5 text-xs leading-none text-ink/40 shadow-pixel-sm ${PIXEL_PRESS} hover:text-ink group-hover:opacity-100 sm:opacity-0 sm:focus:opacity-100`}
         >
-          🙂＋
+          <span>🙂</span>
+          <span className="font-press text-[8px]">＋</span>
         </button>
       )}
     </div>
