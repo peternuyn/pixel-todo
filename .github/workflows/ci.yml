@@ -153,11 +153,14 @@ jobs:
           script: |
             set -euo pipefail
             cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
             # Log in to GHCR with the run's token (read:packages) to pull the image.
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            # Pull only the new backend image, recreate just that service.
+            # Pull the new backend image and apply the compose state. `up -d`
+            # recreates only the services whose definition changed.
             docker compose pull backend
-            docker compose up -d backend
+            docker compose up -d
             # Drop the now-unused old image layers.
             docker image prune -f
         env:
