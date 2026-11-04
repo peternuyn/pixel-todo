@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x scripts/ec2-bootstrap.sh)",
+      "Bash(bash -n scripts/ec2-bootstrap.sh)"
+    ]
+  }
+}

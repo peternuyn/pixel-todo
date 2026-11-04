@@ -32,9 +32,11 @@ I handled the full stack and deployment; she drove the product design, feature w
 
 ## Deployment
 
+Full EC2 rebuild guide: [DEPLOY.md](DEPLOY.md).
+
 ```bash
 # Connect to the database
-docker exec -it leap-and-bound-postgres psql -U studyfarm -d studyfarm
+docker exec -it leaf-and-bound-postgres psql -U studyfarm -d studyfarm
 # to load .env into the backend
 set -a; source ../.env; set +a
 
