@@ -23,7 +23,8 @@ even if you stop/start the instance.
 ## 2. Wait for the bootstrap
 
 ```bash
-ssh -i key.pem ec2-user@<IP>          # Ubuntu: ubuntu@<IP>
+ssh -i ~/Documents/keys/vietthanh-mac.pem ubuntu@46.137.242.23
+       # Ubuntu: ubuntu@<IP>
 tail -f /var/log/cloud-init-output.log # wait for "### Bootstrap done"
 ```
 

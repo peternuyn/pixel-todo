@@ -29,7 +29,7 @@ export default function LoginPage() {
     if (!form.password) e.password = "Required";
     if (mode === "register") {
       if (!form.displayName.trim()) e.displayName = "Required";
-      if (form.password.length < 6) e.password = "Min 6 characters";
+      if (form.password.length < 8) e.password = "Min 8 characters";
       if (form.password !== form.confirm) e.confirm = "Passwords don't match";
     }
     return e;
@@ -129,7 +129,7 @@ export default function LoginPage() {
               value={form.password}
               onChange={(v) => set("password", v)}
               error={errors.password}
-              placeholder="••••••••"
+              placeholder={mode === "register" ? "At least 8 characters" : "••••••••"}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
 

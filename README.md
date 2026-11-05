@@ -3,6 +3,10 @@
 A gamified "study with me" web app where a pet companion grows alongside your focus sessions.
 ACCESS THROUGH THIS:
 https://leafandbound.com/
+![alt text](image-2.png)
+![alt text](image-1.png)
+![alt text](image.png)
+
 
 ## The story
 
@@ -34,6 +38,7 @@ I handled the full stack and deployment; she drove the product design, feature w
 
 Full EC2 rebuild guide: [DEPLOY.md](DEPLOY.md).
 
+Please run the cert check before run docker compose up -d
 ```bash
 # Connect to the database
 docker exec -it leaf-and-bound-postgres psql -U studyfarm -d studyfarm
