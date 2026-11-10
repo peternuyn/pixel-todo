@@ -2,6 +2,7 @@ import Chat from "@/components/Chat";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import RoomCelebration from "@/components/RoomCelebration";
+import RoomHeader from "@/components/RoomHeader";
 import StudyRoom from "@/components/StudyRoom";
 import Timer from "@/components/Timer";
 import Todo from "@/components/Todo";
@@ -20,9 +21,13 @@ export default async function Home({
       <NavMenu />
       <RoomCelebration roomId={room ?? null} />
       <Header />
+      <RoomHeader roomId={room ?? null} />
 
-      <div className="grid gap-3 items-start max-w-[1240px] mx-auto grid-cols-1 lg:[grid-template-columns:minmax(0,2.2fr)_minmax(280px,1fr)]">
-        <StudyRoom roomId={room ?? null} />
+      <div className="grid gap-4 items-start max-w-[1240px] mx-auto grid-cols-1 lg:[grid-template-columns:minmax(0,2.2fr)_minmax(280px,1fr)]">
+        {/* Sticky on desktop so the scene stays in view while you scroll the side panels */}
+        <div className="lg:sticky lg:top-5">
+          <StudyRoom roomId={room ?? null} />
+        </div>
 
         <aside className="flex flex-col gap-4 w-full">
           <Timer roomId={room ?? null} />

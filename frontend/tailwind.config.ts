@@ -21,6 +21,8 @@ const config: Config = {
           DEFAULT: "#AEE7BC", // ← brand color
           dark: "#6FC68C",
           deeper: "#3F8E5E",
+          // Darkest leaf, for small green TEXT: 5.6:1 on panel (passes WCAG AA).
+          ink: "#2F7049",
         },
         // "Wood" reframed as mint-toned planks for buttons, fences
         wood: {

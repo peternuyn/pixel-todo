@@ -48,7 +48,7 @@ export default function TimerView({
       <div className="font-vt text-[56px] leading-none tracking-wider text-ink [text-shadow:3px_3px_0_#FFD66B]">
         {formatMMSS(displaySeconds)}
       </div>
-      <p className="font-silk text-[11px] uppercase tracking-widest text-wood-dark mt-1.5">
+      <p className="font-silk text-[11px] uppercase tracking-widest text-grass-ink mt-1.5">
         {label}
       </p>
 

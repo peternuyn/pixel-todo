@@ -44,7 +44,7 @@ export default function RoomCard({ room, onJoin }: Props) {
           alt={banner.label}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          className="object-cover"
         />
         {/* Legibility wash so white text reads over any scene */}
         <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
@@ -53,14 +53,11 @@ export default function RoomCard({ room, onJoin }: Props) {
         <div className="absolute left-2.5 top-2.5 flex items-center gap-1.5">
           {room.occupants > 0 ? (
             <span className="flex items-center gap-1.5 rounded-full border-2 border-grass-deeper bg-grass-dark/90 px-2 py-0.5 font-silk text-[8px] uppercase tracking-widest text-ink">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ink/60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
-              </span>
+              <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
               Live
             </span>
           ) : (
-            <span className="rounded-full border-2 border-panel-stroke bg-panel/80 px-2 py-0.5 font-silk text-[8px] uppercase tracking-widest text-ink/60">
+            <span className="rounded-full border-2 border-panel-stroke bg-panel px-2 py-0.5 font-silk text-[8px] uppercase tracking-widest text-ink">
               Quiet
             </span>
           )}
@@ -74,7 +71,8 @@ export default function RoomCard({ room, onJoin }: Props) {
               : "border-grass-deeper bg-sun text-ink"
           }`}
         >
-          {room.isPrivate ? "🔒 Private" : "🌿 Public"}
+          <span aria-hidden>{room.isPrivate ? "🔒" : "🌿"}</span>
+          {room.isPrivate ? "Private" : "Public"}
         </span>
 
         {/* Bottom: room name */}
@@ -108,7 +106,7 @@ export default function RoomCard({ room, onJoin }: Props) {
         <div className="flex flex-col gap-1.5">
           {/* All-time joins — social proof that only ever grows */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center -space-x-1.5">
+            <div aria-hidden className="flex items-center -space-x-1.5">
               {Array.from({ length: dots }).map((_, i) => (
                 <span
                   key={i}
@@ -126,10 +124,10 @@ export default function RoomCard({ room, onJoin }: Props) {
 
           {/* Live occupancy — how many are actually in the room right now */}
           <div className="flex items-center justify-between">
-            <span className="font-press text-[8px] text-ink/50">
+            <span className="font-press text-[9px] text-ink/70">
               {isFull ? "full" : `${room.occupants} here now`}
             </span>
-            <span className="font-press text-[8px] text-ink/60">
+            <span className="font-press text-[9px] text-ink/70">
               {room.occupants}/{room.capacity}
             </span>
           </div>
@@ -145,7 +143,7 @@ export default function RoomCard({ room, onJoin }: Props) {
 
         {/* Host + Join */}
         <div className="mt-auto flex items-center justify-between pt-1">
-          <span className="min-w-0 truncate font-pixelify text-xs text-ink/50">
+          <span className="min-w-0 truncate font-pixelify text-sm text-ink/70">
             host: <span className="font-bold text-ink">{room.host}</span>
           </span>
           <button
@@ -155,11 +153,8 @@ export default function RoomCard({ room, onJoin }: Props) {
             // Public rooms join immediately (confirm); private rooms open the password
             // modal first (a lighter select).
             onClick={() => { playSfx(room.isPrivate ? "select" : "confirm"); onJoin(room); }}
-            className={`tag shrink-0 ${
-              isFull
-                ? "cursor-not-allowed opacity-40"
-                : "bg-sun transition-transform group-hover:-translate-y-0.5"
-            }`}
+            aria-label={isFull ? `${room.name} is full` : `Join ${room.name}`}
+            className={`tag min-h-[40px] shrink-0 !px-4 ${isFull ? "cursor-not-allowed opacity-40" : "bg-sun"}`}
           >
             {isFull ? "Full" : room.isPrivate ? "🔑 Enter" : "Join →"}
           </button>

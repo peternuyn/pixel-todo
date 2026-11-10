@@ -229,6 +229,7 @@
     animation: none;
   }
   .animate-rise { opacity: 1; transform: none; }
+  .feature-card:hover { transform: none; }
   .parallax-layer { transform: none; }
 }
 

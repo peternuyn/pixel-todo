@@ -31,10 +31,10 @@ export default function ChatMessage({
       <div className={`flex min-w-0 max-w-[82%] flex-col ${mine ? "items-end" : "items-start"}`}>
         {/* Sender + time. For your own messages we say "You". */}
         <div className={`flex items-baseline gap-1.5 px-0.5 ${mine ? "flex-row-reverse" : ""}`}>
-          <span className="font-press text-[8px] text-wood-dark">
+          <span className="font-press text-[8px] text-grass-ink">
             {mine ? "You" : message.displayName}
           </span>
-          <span className="font-pixelify text-[11px] text-ink/40">{time}</span>
+          <span className="font-pixelify text-[11px] text-ink/70">{time}</span>
         </div>
 
         {/* The message bubble — tinted butter for you, white for others. */}

@@ -49,7 +49,7 @@ export default function AiAnswerCard({
         {question && (
           <div className="flex items-start gap-1.5 border-b border-dashed border-glow-deep/25 px-2.5 py-1.5">
             <span className="mt-[1px] font-pixelify text-[12px] font-bold text-glow-deep">❯</span>
-            <p className="font-pixelify text-[12px] leading-snug text-ink/50 line-clamp-2">
+            <p className="font-pixelify text-[12px] leading-snug text-ink/70 line-clamp-2">
               {question}
             </p>
           </div>
@@ -84,7 +84,7 @@ export function AiThinking() {
         <span className="font-pixelify text-[15px] font-semibold leading-none text-glow-deep">
           Gemini
         </span>
-        <span className="ml-auto font-pixelify text-[11px] italic text-ink/40">thinking…</span>
+        <span className="ml-auto font-pixelify text-[11px] italic text-ink/70">thinking…</span>
       </div>
       <div className="flex items-center gap-1.5 px-2.5 py-3">
         <Dot delay="0ms" />

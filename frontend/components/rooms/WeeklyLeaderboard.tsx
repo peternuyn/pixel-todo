@@ -5,7 +5,7 @@ import { userApi, type PetResponse } from "@/lib/api";
 import { petStageSprite } from "@/lib/pets";
 
 type Props = {
-  currentUserId: string;
+  currentUserId: string | null;
   pets: PetResponse[];
 };
 
@@ -28,13 +28,13 @@ export default function WeeklyLeaderboard({ currentUserId, pets }: Props) {
     <div className="panel">
       <div className="flex items-center justify-between">
         <h3 className="font-press text-[10px] text-ink tracking-widest uppercase">This Week</h3>
-        <span className="font-press text-[7px] text-ink/40 tracking-widest">RESETS MONDAY</span>
+        <span className="font-press text-[7px] text-ink/70 tracking-widest">RESETS MONDAY</span>
       </div>
 
       {isLoading ? (
-        <p className="font-pixelify text-sm text-ink/50 mt-3">Counting the harvest…</p>
+        <p className="font-pixelify text-sm text-ink/70 mt-3">Counting the harvest…</p>
       ) : entries.length === 0 ? (
-        <p className="font-pixelify text-sm text-ink/50 mt-3">
+        <p className="font-pixelify text-sm text-ink/70 mt-3">
           Nobody has studied yet this week — be the first on the board! 🌱
         </p>
       ) : (
@@ -49,17 +49,20 @@ export default function WeeklyLeaderboard({ currentUserId, pets }: Props) {
                   isMe ? "bg-sun/40" : "bg-panel-shadow/30"
                 }`}
               >
-                <span className="w-6 text-center font-press text-[9px] text-ink/60">
+                <span
+                  className={`w-7 text-center ${MEDALS[i] ? "text-xl leading-none" : "font-press text-[10px] text-ink/70"}`}
+                  aria-label={`Rank ${i + 1}`}
+                >
                   {MEDALS[i] ?? i + 1}
                 </span>
-                <span className="w-7 h-7 flex items-end justify-center">
-                  <img src={src} alt="" style={{ width: `${scale * 100}%` }} className="[image-rendering:pixelated]" />
+                <span aria-hidden className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden">
+                  <img src={src} alt="" style={{ width: `${scale * 100}%` }} className="max-w-none shrink-0 [image-rendering:pixelated]" />
                 </span>
                 <span className="flex-1 truncate font-pixelify text-sm text-ink font-bold">
                   {e.displayName}
-                  {isMe && <span className="ml-1.5 font-press text-[7px] text-ink/50">YOU</span>}
+                  {isMe && <span className="ml-1.5 font-press text-[7px] text-ink/70">YOU</span>}
                 </span>
-                <span className="font-press text-[8px] text-ink/60">{formatHours(e.weekSeconds)}</span>
+                <span className="font-press text-[9px] text-ink">{formatHours(e.weekSeconds)}</span>
               </li>
             );
           })}

@@ -48,7 +48,7 @@ export default function TodoRow({
       </span>
 
       <span
-        className={`flex-1 ${done ? "line-through text-wood-dark opacity-60" : ""}`}
+        className={`flex-1 ${done ? "line-through text-grass-ink opacity-60" : ""}`}
       >
         {label}
       </span>
@@ -65,7 +65,7 @@ export default function TodoRow({
             onRemove();
           }}
           disabled={disabled}
-          className="text-ink/30 hover:text-barn opacity-0 group-hover:opacity-100 transition-opacity"
+          className="text-ink/70 hover:text-barn [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
         >
           ✕
         </button>

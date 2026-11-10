@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
@@ -8,8 +8,10 @@ import NavMenu from "@/components/NavMenu";
 import RoomCard from "@/components/rooms/RoomCard";
 import PasswordModal from "@/components/rooms/PasswordModal";
 import CreateRoomModal, { type CreateRoomData } from "@/components/rooms/CreateRoomModal";
+import PetCard from "@/components/rooms/PetCard";
+import WeeklyLeaderboard from "@/components/rooms/WeeklyLeaderboard";
 import { toRoom, type Room } from "@/lib/rooms";
-import { roomApi, ApiError, getStoredUser, type CreateRoomRequest } from "@/lib/api";
+import { roomApi, userApi, petApi, ApiError, getStoredUser, type CreateRoomRequest } from "@/lib/api";
 
 type Filter = "all" | "public" | "private";
 
@@ -18,7 +20,7 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="flex items-baseline gap-1.5 border-2 border-panel-stroke bg-panel/70 px-2.5 py-1">
       <span className="font-jersey text-xl leading-none text-ink">{value}</span>
-      <span className="font-silk text-[8px] uppercase tracking-widest text-ink/50">{label}</span>
+      <span className="font-silk text-[8px] uppercase tracking-widest text-ink/70">{label}</span>
     </div>
   );
 }
@@ -43,6 +45,26 @@ export default function RoomsPage() {
     queryKey: ROOMS_KEY,
     queryFn: async () => (await roomApi.list()).map(toRoom),
   });
+  // Who's logged in, read after mount (localStorage isn't available during SSR,
+  // and reading it in render would cause a hydration mismatch).
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    setUserId(getStoredUser()?.userId ?? null);
+  }, []);
+
+  // Fresh user record for the pet card: the copy saved at login is stale (XP and
+  // mood change after every session). Same key as the profile page, so it's shared.
+  const { data: me } = useQuery({
+    queryKey: ["user", userId],
+    queryFn: () => userApi.getById(userId!),
+    enabled: !!userId,
+  });
+  const { data: pets = [] } = useQuery({
+    queryKey: ["pets"],
+    queryFn: () => petApi.list(),
+  });
+  const myPet = pets.find((p) => p.petId === me?.petId);
+
   const loadError = error
     ? error instanceof ApiError
       ? error.message
@@ -162,7 +184,7 @@ export default function RoomsPage() {
               <h1 className="mt-3 font-jersey text-5xl leading-none text-ink [text-shadow:3px_3px_0_#FFD66B]">
                 Study Rooms
               </h1>
-              <p className="mt-2 max-w-md font-pixelify text-sm text-ink/60">
+              <p className="mt-2 max-w-md font-pixelify text-sm text-ink/70">
                 Drop into a cosy room, focus alongside friends, and grow your farm together.
               </p>
 
@@ -184,7 +206,7 @@ export default function RoomsPage() {
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="tag active cta-glow shrink-0 whitespace-nowrap !px-5 !py-3 !text-[11px]"
+              className="tag active shrink-0 min-h-[44px] whitespace-nowrap !px-5 !py-3 !text-[11px]"
             >
               + Create Room
             </button>
@@ -199,7 +221,8 @@ export default function RoomsPage() {
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
-                className={`tag capitalize ${filter === f ? "active" : ""}`}
+                aria-pressed={filter === f}
+                className={`tag min-h-[40px] capitalize ${filter === f ? "active" : ""}`}
               >
                 {f === "all" ? "✦ All" : f === "public" ? "🌿 Public" : "🔒 Private"}
               </button>
@@ -208,55 +231,81 @@ export default function RoomsPage() {
 
           {/* Search */}
           <div className="relative w-full sm:w-72">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink/40">
+            <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink/70">
               🔍
             </span>
             <input
               type="search"
+              aria-label="Search rooms by name or topic"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search rooms…"
-              className="w-full border-[3px] border-panel-stroke bg-panel py-2 pl-9 pr-3 font-pixelify text-sm text-ink outline-none placeholder:text-ink/30 focus:border-grass-dark"
+              className="w-full min-h-[44px] border-[3px] border-panel-stroke bg-panel py-2 pl-9 pr-3 font-pixelify text-base sm:text-sm text-ink outline-none placeholder:text-ink/60 focus:border-grass-dark"
             />
           </div>
         </div>
 
-        {/* Join error (public rooms have no modal to show it in) */}
-        {joinError && !pendingRoom && (
-          <div className="panel mb-4 py-3 text-center">
-            <p className="font-press text-[10px] text-barn">{joinError}</p>
-          </div>
-        )}
-
-        {/* Grid */}
-        {loading ? (
-          <div className="panel flex flex-col items-center gap-3 py-12 text-center">
-            <span className="text-4xl animate-pulse">🌱</span>
-            <p className="font-press text-[10px] text-ink/50">Loading rooms…</p>
-          </div>
-        ) : loadError ? (
-          <div className="panel flex flex-col items-center gap-3 py-12 text-center">
-            <span className="text-4xl">🚜</span>
-            <p className="font-press text-[10px] text-barn">{loadError}</p>
-          </div>
-        ) : visible.length === 0 ? (
-          <div className="panel flex flex-col items-center gap-3 py-12 text-center">
-            <span className="text-4xl">🌾</span>
-            <p className="font-press text-[10px] text-ink/50">No rooms found</p>
-          </div>
-        ) : (
-          <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((room, i) => (
-              <div
-                key={room.id}
-                className="animate-rise"
-                style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
-              >
-                <RoomCard room={room} onJoin={handleJoin} />
+        <div className="grid gap-5 grid-cols-1 lg:grid-cols-[1fr_340px] items-start">
+          <div>
+            {/* Join error (public rooms have no modal to show it in) */}
+            {joinError && !pendingRoom && (
+              <div className="panel mb-4 py-3 text-center">
+                <p className="font-press text-[10px] text-barn">{joinError}</p>
               </div>
-            ))}
+            )}
+
+            {/* Grid */}
+            {loading ? (
+              <div className="panel flex flex-col items-center gap-3 py-12 text-center">
+                <span aria-hidden className="text-4xl">🌱</span>
+                <p className="font-press text-[10px] text-ink/70">Loading rooms…</p>
+              </div>
+            ) : loadError ? (
+              <div className="panel flex flex-col items-center gap-3 py-12 text-center">
+                <span className="text-4xl">🚜</span>
+                <p className="font-press text-[10px] text-barn">{loadError}</p>
+              </div>
+            ) : rooms.length === 0 ? (
+              <div className="panel flex flex-col items-center gap-3 py-12 text-center">
+                <span aria-hidden className="text-4xl">🌾</span>
+                <p className="font-press text-[10px] text-ink/70">No rooms yet. Plant the first one!</p>
+                <button type="button" onClick={() => setShowCreate(true)} className="tag active mt-1 min-h-[44px] !px-4">
+                  + Create Room
+                </button>
+              </div>
+            ) : visible.length === 0 ? (
+              <div className="panel flex flex-col items-center gap-3 py-12 text-center">
+                <span aria-hidden className="text-4xl">🔍</span>
+                <p className="font-press text-[10px] text-ink/70">No rooms match your filters</p>
+                <button
+                  type="button"
+                  onClick={() => { setFilter("all"); setSearch(""); }}
+                  className="tag mt-1 min-h-[44px] !px-4"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-5 grid-cols-1 sm:grid-cols-2">
+                {visible.map((room, i) => (
+                  <div
+                    key={room.id}
+                    className="animate-rise"
+                    style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
+                  >
+                    <RoomCard room={room} onJoin={handleJoin} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Sidebar: your pet + this week's leaderboard (stacks below rooms on mobile) */}
+          <aside className="flex flex-col gap-5 lg:sticky lg:top-5">
+            {me?.pet && <PetCard progress={me.pet} pet={myPet} />}
+            <WeeklyLeaderboard currentUserId={userId} pets={pets} />
+          </aside>
+        </div>
       </div>
 
       {/* Password modal */}

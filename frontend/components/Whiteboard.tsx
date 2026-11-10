@@ -276,7 +276,7 @@ export default function Whiteboard({ roomId }: { roomId: string | null }) {
   if (!roomId) {
     return (
       <div className="absolute inset-0 grid place-items-center">
-        <p className="font-pixelify text-sm text-ink/60">Join a room to use the whiteboard.</p>
+        <p className="font-pixelify text-sm text-ink/70">Join a room to use the whiteboard.</p>
       </div>
     );
   }

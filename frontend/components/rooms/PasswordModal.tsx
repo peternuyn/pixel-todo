@@ -70,7 +70,7 @@ export default function PasswordModal({ room, onConfirm, onClose, serverError }:
           </button>
         </div>
 
-        <p className="font-pixelify text-sm text-ink/60 mb-4">
+        <p className="font-pixelify text-sm text-ink/70 mb-4">
           This room is private. Enter the password to join.
         </p>
 
@@ -92,7 +92,7 @@ export default function PasswordModal({ room, onConfirm, onClose, serverError }:
                 setError(false);
               }}
               placeholder="••••••••"
-              className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-ink outline-none placeholder:text-ink/30 ${
+              className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-ink outline-none placeholder:text-ink/60 ${
                 error
                   ? "border-barn"
                   : "border-panel-stroke focus:border-grass-dark"

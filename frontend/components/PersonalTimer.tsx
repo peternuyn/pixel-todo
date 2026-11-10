@@ -109,7 +109,7 @@ export default function PersonalTimer() {
   }
 
   if (!mounted) {
-    return <p className="font-pixelify text-sm text-ink/50 text-center py-6">Loading…</p>;
+    return <p className="font-pixelify text-sm text-ink/70 text-center py-6">Loading…</p>;
   }
 
   return (

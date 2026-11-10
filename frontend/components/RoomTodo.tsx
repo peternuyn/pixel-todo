@@ -97,7 +97,7 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
   // No room in the URL — nothing to show.
   if (!roomId) {
     return (
-      <p className="font-pixelify text-sm text-ink/50">
+      <p className="font-pixelify text-sm text-ink/70">
         Join a room to see its shared to-do list.
       </p>
     );
@@ -108,7 +108,7 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
   return (
     <>
       <div className="mb-3 flex items-center font-press text-[11px]">
-        <span className="ml-auto font-silk text-[10px] text-wood-dark">
+        <span className="ml-auto font-silk text-[10px] text-grass-ink">
           {remaining} LEFT
         </span>
       </div>
@@ -119,9 +119,9 @@ export default function RoomTodo({ roomId }: { roomId: string | null }) {
 
       <ul className="flex flex-col gap-2.5">
         {isLoading ? (
-          <li className="font-pixelify text-sm text-ink/50">Loading…</li>
+          <li className="font-pixelify text-sm text-ink/70">Loading…</li>
         ) : tasks.length === 0 ? (
-          <li className="font-pixelify text-sm text-ink/50">No tasks yet.</li>
+          <li className="font-pixelify text-sm text-ink/70">No tasks yet.</li>
         ) : (
           tasks.map((t) => (
             <TodoRow

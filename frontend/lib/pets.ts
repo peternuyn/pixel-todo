@@ -69,6 +69,14 @@ export function petStageSprite(
   spriteKey: string | null | undefined,
   stage: PetStage | undefined
 ): { src: string; scale: number } {
-  if (stage === "EGG") return { src: EGG_SRC, scale: 0.7 };
-  return { src: petAvatarSrc(spriteKey), scale: stage === "BABY" ? 0.65 : 1 };
+  if (stage === "EGG") return { src: EGG_SRC, scale: 0.6 };
+  const zoom = SPRITE_ZOOM[spriteKey ?? "cat"] ?? 1;
+  return { src: petAvatarSrc(spriteKey), scale: (stage === "BABY" ? 0.75 : 1) * zoom };
 }
+
+// Some sprite sheets leave lots of empty canvas around the character (the cat is
+// a 16px figure centred in a 48px frame). Zoom those so every pet reads at a
+// similar size in fixed-size frames. Unlisted sprites already fill their frame.
+const SPRITE_ZOOM: Record<string, number> = {
+  cat: 2.4,
+};

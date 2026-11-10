@@ -51,8 +51,8 @@ export default function NavMenu() {
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 bg-panel border-r-4 border-panel-stroke shadow-pixel-lg transition-transform duration-200 ease-out ${
-          open ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 z-50 h-full w-72 bg-panel border-r-4 border-panel-stroke transition-transform duration-200 ease-out ${
+          open ? "translate-x-0 shadow-pixel-lg" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between p-5 border-b-[3px] border-panel-stroke">

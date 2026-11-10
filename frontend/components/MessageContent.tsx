@@ -50,7 +50,7 @@ export default function MessageContent({ content }: { content: string }) {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-wood-dark underline underline-offset-2 hover:text-barn break-all"
+            className="text-grass-ink underline underline-offset-2 hover:text-barn break-all"
           >
             {part}
           </a>

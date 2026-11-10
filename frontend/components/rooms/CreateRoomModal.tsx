@@ -185,7 +185,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
               value={form.name}
               onChange={(e) => setField("name", e.target.value)}
               placeholder="e.g. Cozy Meadow"
-              className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-sm text-ink outline-none placeholder:text-ink/30 ${
+              className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-base sm:text-sm text-ink outline-none placeholder:text-ink/60 ${
                 errors.name ? "border-barn" : "border-panel-stroke focus:border-grass-dark"
               }`}
             />
@@ -195,7 +195,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
           {/* Description */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="room-desc" className="font-press text-[8px] uppercase tracking-widest text-ink/70">
-              Description <span className="text-ink/30">(optional)</span>
+              Description <span className="text-ink/70">(optional)</span>
             </label>
             <input
               id="room-desc"
@@ -203,14 +203,14 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
               value={form.description}
               onChange={(e) => setField("description", e.target.value)}
               placeholder="e.g. Deep work — no distractions"
-              className="w-full bg-panel border-[3px] border-panel-stroke px-3 py-2 font-pixelify text-sm text-ink outline-none placeholder:text-ink/30 focus:border-grass-dark"
+              className="w-full bg-panel border-[3px] border-panel-stroke px-3 py-2 font-pixelify text-base sm:text-sm text-ink outline-none placeholder:text-ink/60 focus:border-grass-dark"
             />
           </div>
 
           {/* Tags */}
           <div className="flex flex-col gap-1.5">
             <label className="font-press text-[8px] uppercase tracking-widest text-ink/70">
-              Tags <span className="text-ink/30">(up to {MAX_TAGS})</span>
+              Tags <span className="text-ink/70">(up to {MAX_TAGS})</span>
             </label>
 
             {/* Tag chips + input in one box */}
@@ -229,7 +229,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-                    className="leading-none text-ink/50 hover:text-barn"
+                    className="leading-none text-ink/70 hover:text-barn"
                   >
                     ✕
                   </button>
@@ -245,7 +245,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
                     onChange={(e) => { setTagInput(e.target.value); setErrors((er) => ({ ...er, tagInput: undefined })); }}
                     onKeyDown={handleTagKeyDown}
                     placeholder={form.tags.length === 0 ? "Type your own tag…" : ""}
-                    className="flex-1 min-w-[60px] bg-transparent font-pixelify text-sm text-ink outline-none placeholder:text-ink/30"
+                    className="flex-1 min-w-[60px] bg-transparent font-pixelify text-base sm:text-sm text-ink outline-none placeholder:text-ink/60"
                   />
                   {/* "+" commits the typed tag, so users don't have to know
                       about the Enter key. Disabled until something is typed. */}
@@ -271,7 +271,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
                     key={tag}
                     type="button"
                     onClick={() => addTag(tag)}
-                    className="font-silk text-[8px] uppercase tracking-wider px-2 py-0.5 border-[2px] border-panel-stroke bg-wood-light text-ink/60 hover:border-grass-dark hover:text-ink transition-colors"
+                    className="font-silk text-[8px] uppercase tracking-wider px-2 py-0.5 border-[2px] border-panel-stroke bg-wood-light text-ink/70 hover:border-grass-dark hover:text-ink transition-colors"
                   >
                     + {tag}
                   </button>
@@ -283,7 +283,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
           {/* Capacity */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="room-capacity" className="font-press text-[8px] uppercase tracking-widest text-ink/70">
-              Capacity <span className="text-ink/30">(2 – 50)</span>
+              Capacity <span className="text-ink/70">(2 – 50)</span>
             </label>
             <input
               id="room-capacity"
@@ -293,7 +293,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
               value={capacityInput}
               onChange={(e) => handleCapacityChange(e.target.value)}
               onBlur={handleCapacityBlur}
-              className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-sm text-ink outline-none ${
+              className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-base sm:text-sm text-ink outline-none ${
                 errors.capacityInput ? "border-barn" : "border-panel-stroke focus:border-grass-dark"
               }`}
             />
@@ -310,7 +310,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
                 className={`flex-1 py-2 font-press text-[8px] tracking-widest transition-colors ${
                   !form.isPrivate
                     ? "bg-grass text-white"
-                    : "bg-wood-light text-ink/40 hover:text-ink/70"
+                    : "bg-wood-light text-ink/70 hover:text-ink/70"
                 }`}
               >
                 🌿 Public
@@ -321,7 +321,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
                 className={`flex-1 py-2 font-press text-[8px] tracking-widest border-l-[3px] border-panel-stroke transition-colors ${
                   form.isPrivate
                     ? "bg-barn text-white"
-                    : "bg-wood-light text-ink/40 hover:text-ink/70"
+                    : "bg-wood-light text-ink/70 hover:text-ink/70"
                 }`}
               >
                 🔒 Private
@@ -341,7 +341,7 @@ export default function CreateRoomModal({ onConfirm, onClose, serverError }: Pro
                 value={form.password}
                 onChange={(e) => setField("password", e.target.value)}
                 placeholder="••••••••"
-                className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-sm text-ink outline-none placeholder:text-ink/30 ${
+                className={`w-full bg-panel border-[3px] px-3 py-2 font-pixelify text-base sm:text-sm text-ink outline-none placeholder:text-ink/60 ${
                   errors.password ? "border-barn" : "border-panel-stroke focus:border-grass-dark"
                 }`}
               />

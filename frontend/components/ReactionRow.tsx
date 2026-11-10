@@ -67,7 +67,7 @@ export default function ReactionRow({
           <button
             onClick={() => setPaletteFor(null)}
             aria-label="Close reactions"
-            className="grid h-6 w-6 place-items-center rounded-full font-press text-[9px] text-ink/40 transition-colors hover:bg-panel hover:text-ink"
+            className="grid h-6 w-6 place-items-center rounded-full font-press text-[9px] text-ink/70 transition-colors hover:bg-panel hover:text-ink"
           >
             ✕
           </button>
@@ -76,7 +76,7 @@ export default function ReactionRow({
         <button
           onClick={() => setPaletteFor(message.messageId)}
           aria-label="Add reaction"
-          className={`flex items-center gap-0.5 rounded-full border-[2px] border-panel-stroke bg-white px-2 py-0.5 text-xs leading-none text-ink/40 shadow-pixel-sm ${PIXEL_PRESS} hover:text-ink group-hover:opacity-100 sm:opacity-0 sm:focus:opacity-100`}
+          className={`flex items-center gap-0.5 rounded-full border-[2px] border-panel-stroke bg-white px-2 py-0.5 text-xs leading-none text-ink/70 shadow-pixel-sm ${PIXEL_PRESS} hover:text-ink group-hover:opacity-100 sm:opacity-0 sm:focus:opacity-100`}
         >
           <span>🙂</span>
           <span className="font-press text-[8px]">＋</span>

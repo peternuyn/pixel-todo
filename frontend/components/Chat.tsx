@@ -45,7 +45,7 @@ export default function Chat({ roomId }: { roomId: string | null }) {
     return (
       <section className="w-full p-5 rounded-3xl border-4 border-panel-stroke bg-panel shadow-pixel">
         <ChatHeader />
-        <p className="mt-2 font-pixelify text-sm text-ink/50">
+        <p className="mt-2 font-pixelify text-sm text-ink/70">
           Join a room to chat with everyone in it.
         </p>
       </section>
@@ -63,7 +63,7 @@ export default function Chat({ roomId }: { roomId: string | null }) {
         className="scroll-leaf mt-3 flex flex-col gap-2.5 h-72 overflow-y-auto pr-1"
       >
         {isLoading ? (
-          <p className="font-pixelify text-sm text-ink/50">Loading…</p>
+          <p className="font-pixelify text-sm text-ink/70">Loading…</p>
         ) : items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-ink/45">
             <span className="text-3xl">🌾</span>
@@ -138,7 +138,7 @@ function ChatHeader({ count }: { count?: number }) {
         <span>Chat</span>
       </div>
       {count !== undefined && count > 0 && (
-        <span className="font-silk text-[10px] uppercase tracking-widest text-wood-dark">
+        <span className="font-silk text-[10px] uppercase tracking-widest text-grass-ink">
           {count} {count === 1 ? "msg" : "msgs"}
         </span>
       )}

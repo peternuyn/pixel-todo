@@ -62,7 +62,7 @@ export default function RoomTimer({ roomId }: { roomId: string | null }) {
 
   if (!roomId) {
     return (
-      <p className="font-pixelify text-sm text-ink/50 text-center py-6">
+      <p className="font-pixelify text-sm text-ink/70 text-center py-6">
         Join a room to use its shared timer.
       </p>
     );

@@ -17,10 +17,10 @@ export default function StudyRoom({ roomId }: { roomId: string | null }) {
     <section className="panel rounded-3xl border-4 border-panel-stroke bg-panel shadow-pixel flex flex-col justify-center">
       <div className="flex justify-between items-center mb-3.5">
         <div className="font-press text-[11px] flex items-center gap-2.5">
-          <span>📺</span>
+          <span aria-hidden>📺</span>
           <span>Study room</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="tablist" aria-label="Room view">
           <TabButton active={tab === "video"} onClick={() => setTab("video")}>
             Video
           </TabButton>
@@ -50,7 +50,13 @@ function TabButton({
   children: React.ReactNode;
 }) {
   return (
-    <button className={`tag ${active ? "active" : ""}`} onClick={onClick}>
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      className={`tag min-h-[40px] ${active ? "active" : ""}`}
+      onClick={onClick}
+    >
       {children}
     </button>
   );

@@ -69,18 +69,18 @@ export default function PersonalTodo() {
   return (
     <>
       <div className="mb-3 flex items-center font-press text-[11px]">
-        <span className="ml-auto font-silk text-[10px] text-wood-dark">
+        <span className="ml-auto font-silk text-[10px] text-grass-ink">
           {remaining} LEFT
         </span>
       </div>
 
       {!mounted ? (
-        <p className="font-pixelify text-sm text-ink/50">Loading…</p>
+        <p className="font-pixelify text-sm text-ink/70">Loading…</p>
       ) : (
         <>
           <ul className="flex flex-col gap-2.5">
             {todos.length === 0 ? (
-              <li className="font-pixelify text-sm text-ink/50">No tasks yet.</li>
+              <li className="font-pixelify text-sm text-ink/70">No tasks yet.</li>
             ) : (
               todos.map((t) => (
                 <TodoRow
