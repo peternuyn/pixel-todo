@@ -4,9 +4,11 @@ import com.leapandbound.badge.BadgeService;
 import com.leapandbound.pet.PetRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +22,11 @@ public class UserService {
     private final PetRepository petRepository;
     // Awards streak badges after a streak update.
     private final BadgeService badgeService;
+
+    // Which timezone decides where one "study day" ends and the next begins for
+    // streaks. Override with STREAK_ZONE (e.g. Asia/Ho_Chi_Minh); defaults to UTC.
+    @Value("${app.streak-zone:${STREAK_ZONE:UTC}}")
+    private ZoneId streakZone;
 
     // -------------------------------------------------------------------------
     // Registration
@@ -112,7 +119,9 @@ public class UserService {
     @Transactional
     public User recordStudySession(UUID userId, int durationSeconds) {
         User user = getById(userId);
-        user.addStudyTime(durationSeconds);
+        // Also advances the daily streak; SessionService re-evaluates badges right
+        // after this, which is what unlocks Week Warrior / Unbreakable.
+        user.addStudyTime(durationSeconds, streakZone);
         return user;
     }
 

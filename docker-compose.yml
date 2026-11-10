@@ -37,6 +37,8 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       # Google Gemini API key for the "/ai" chat command. Set GEMINI_API_KEY in .env;
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Timezone that decides where a "study day" ends for streak badges.
+      STREAK_ZONE: ${STREAK_ZONE:-UTC}
     expose:
       - "8080"
     depends_on:
