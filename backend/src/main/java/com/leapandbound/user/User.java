@@ -1,5 +1,6 @@
 package com.leapandbound.user;
 
+import com.leapandbound.pet.PetGrowth;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -67,6 +68,11 @@ public class User {
     @Column(name = "last_studied_at")
     private OffsetDateTime lastStudiedAt;
 
+    /** Growth points for the user's pet (see PetGrowth). Only ever goes up. */
+    @Column(name = "pet_xp", nullable = false)
+    @Builder.Default
+    private int petXp = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -84,11 +90,15 @@ public class User {
     /**
      * Credit a finished session and advance the daily streak. Days are calendar
      * days in {@code zone}: studying again the same day keeps the streak, studying
-     * the very next day extends it, and any gap restarts it at 1.
+     * the very next day extends it, and any gap restarts it at 1. Also feeds the
+     * pet its XP, with a bonus for the first session of a new day.
      */
     public void addStudyTime(int seconds, ZoneId zone) {
         OffsetDateTime now = OffsetDateTime.now();
         LocalDate today = now.atZoneSameInstant(zone).toLocalDate();
+        boolean firstSessionToday = lastStudiedAt == null
+                || !lastStudiedAt.atZoneSameInstant(zone).toLocalDate().equals(today);
+        this.petXp += PetGrowth.xpForSession(seconds, firstSessionToday);
 
         if (lastStudiedAt == null) {
             updateStreak(1);

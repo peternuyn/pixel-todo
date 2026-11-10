@@ -8,6 +8,8 @@ import Water from "@/assets/gifs/water-background.gif";
 import Header from "@/components/Header";
 import NavMenu from "@/components/NavMenu";
 import EditProfileModal from "@/components/profile/EditProfileModal";
+import PetCard from "@/components/profile/PetCard";
+import WeeklyLeaderboard from "@/components/profile/WeeklyLeaderboard";
 import {
   userApi,
   roomApi,
@@ -204,6 +206,12 @@ export default function ProfilePage() {
             <StatCard value={hostedRooms.length} label="Rooms Hosted" icon="🏡" />
             <StatCard value={favoriteTag ?? "—"} label="Fave Tag" icon="🌿" />
           </div>
+        </div>
+
+        {/* Pet growth + this week's leaderboard */}
+        <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
+          {user.pet && <PetCard progress={user.pet} pet={currentPet} />}
+          <WeeklyLeaderboard currentUserId={user.userId} pets={pets} />
         </div>
 
         {/* Badges */}

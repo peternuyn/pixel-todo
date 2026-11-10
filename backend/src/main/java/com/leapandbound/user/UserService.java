@@ -2,15 +2,24 @@ package com.leapandbound.user;
 
 import com.leapandbound.badge.BadgeService;
 import com.leapandbound.pet.PetRepository;
+import com.leapandbound.session.SessionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +31,8 @@ public class UserService {
     private final PetRepository petRepository;
     // Awards streak badges after a streak update.
     private final BadgeService badgeService;
+    // Sums finished sessions for the weekly leaderboard.
+    private final SessionRepository sessionRepository;
 
     // Which timezone decides where one "study day" ends and the next begins for
     // streaks. Override with STREAK_ZONE (e.g. Asia/Ho_Chi_Minh); defaults to UTC.
@@ -77,6 +88,33 @@ public class UserService {
 
     public List<User> getLeaderboard() {
         return userRepository.findTop10ByOrderByStudyTimeSecondsDesc();
+    }
+
+    /** A leaderboard row: the user plus their study seconds this week. */
+    public record WeeklyEntry(User user, long weekSeconds) {}
+
+    /**
+     * Top 10 by study time this calendar week (Monday 00:00 in the streak timezone),
+     * so everyone starts level each Monday instead of chasing all-time totals.
+     * Two queries total: one grouped sum over sessions, one batched user lookup.
+     */
+    public List<WeeklyEntry> getWeeklyLeaderboard() {
+        OffsetDateTime weekStart = LocalDate.now(streakZone)
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .atStartOfDay(streakZone)
+                .toOffsetDateTime();
+
+        List<SessionRepository.StudyTotal> totals =
+                sessionRepository.findTopStudyTotalsSince(weekStart, PageRequest.of(0, 10));
+        Map<UUID, User> users = userRepository
+                .findAllById(totals.stream().map(SessionRepository.StudyTotal::getUserId).toList())
+                .stream()
+                .collect(Collectors.toMap(User::getUserId, Function.identity()));
+
+        return totals.stream()
+                .filter(t -> users.containsKey(t.getUserId()) && t.getSeconds() != null && t.getSeconds() > 0)
+                .map(t -> new WeeklyEntry(users.get(t.getUserId()), t.getSeconds()))
+                .toList();
     }
 
     // -------------------------------------------------------------------------

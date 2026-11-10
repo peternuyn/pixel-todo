@@ -16,6 +16,7 @@ CREATE TABLE users (
     current_streak       INT  NOT NULL DEFAULT 0,
     longest_streak       INT  NOT NULL DEFAULT 0,
     last_studied_at  TIMESTAMPTZ,
+    pet_xp           INT  NOT NULL DEFAULT 0,   -- grows the pet (see PetGrowth)
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -180,6 +181,7 @@ CREATE INDEX idx_belong_room_user   ON belong_room(user_id);
 CREATE INDEX idx_belong_room_room   ON belong_room(room_id);
 CREATE INDEX idx_sessions_user      ON sessions(user_id);
 CREATE INDEX idx_sessions_room      ON sessions(room_id);
+CREATE INDEX idx_sessions_ended_at  ON sessions(ended_at);
 CREATE INDEX idx_pets_sprite_key    ON pets(sprite_key);
 CREATE INDEX idx_room_tasks_room    ON room_tasks(room_id);
 CREATE INDEX idx_user_badges_user   ON user_badges(user_id);

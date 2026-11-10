@@ -10,6 +10,8 @@ import cowWalk from "@/assets/cow/cow-walk.gif";
 import chickenWalk from "@/assets/chicken/chicken-walk.gif";
 import pescyFront from "@/assets/pescy/pescy-front.gif";
 import pescyWalk from "@/assets/pescy/pescy-walk.gif";
+import eggSprite from "@/assets/egg/egg.svg";
+import type { PetStage } from "./api";
 
 // Maps a pet's spriteKey (from the backend) to its STATIONARY avatar image.
 // Used when showing a pet standing still (e.g. in a profile).
@@ -49,4 +51,24 @@ export function petWalkSrc(spriteKey: string | null | undefined): string {
     return PET_WALKS[spriteKey].src;
   }
   return DEFAULT_WALK.src;
+}
+
+// ---------------------------------------------------------------------------
+// Growth stages
+// ---------------------------------------------------------------------------
+
+/** Every pet starts as the same egg; after hatching it's the chosen pet. */
+export const EGG_SRC: string = eggSprite.src;
+
+/**
+ * The sprite + display scale for a pet at a given growth stage. There's no
+ * dedicated baby art yet, so a BABY is the chosen pet drawn smaller — drop in
+ * "<key>-baby.gif" assets later and map them here.
+ */
+export function petStageSprite(
+  spriteKey: string | null | undefined,
+  stage: PetStage | undefined
+): { src: string; scale: number } {
+  if (stage === "EGG") return { src: EGG_SRC, scale: 0.7 };
+  return { src: petAvatarSrc(spriteKey), scale: stage === "BABY" ? 0.65 : 1 };
 }

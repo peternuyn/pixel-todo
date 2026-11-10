@@ -42,6 +42,28 @@ export type UserResponse = {
   longestStreak: number;
   lastStudiedAt: string | null;
   createdAt: string;
+  // Older copies saved in localStorage before this field existed won't have it.
+  pet?: PetProgress;
+};
+
+// Mirrors the backend's PetGrowth.View: growth from XP, mood from recent study.
+export type PetStage = "EGG" | "BABY" | "GROWN";
+export type PetMood = "HAPPY" | "LONELY" | "SAD";
+export type PetProgress = {
+  xp: number;
+  stage: PetStage;
+  stageMinXp: number;
+  nextStageXp: number | null; // null once fully grown
+  mood: PetMood;
+};
+
+// Mirrors UserController.WeeklyLeaderboardEntry.
+export type WeeklyLeaderboardEntry = {
+  userId: string;
+  displayName: string;
+  petId: string | null;
+  petStage: PetStage;
+  weekSeconds: number;
 };
 
 export const userApi = {
@@ -63,6 +85,11 @@ export const userApi = {
   // profile page so stats stay fresh even if localStorage is out of date.
   getById(userId: string) {
     return request<UserResponse>(`/api/users/${userId}`);
+  },
+
+  // Top 10 by study time this calendar week (resets every Monday).
+  weeklyLeaderboard() {
+    return request<WeeklyLeaderboardEntry[]>("/api/users/leaderboard/weekly");
   },
 
   // Update the editable parts of a profile (PATCH /api/users/{id}/profile).

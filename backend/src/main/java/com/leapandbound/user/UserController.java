@@ -1,5 +1,6 @@
 package com.leapandbound.user;
 
+import com.leapandbound.pet.PetGrowth;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -67,7 +68,9 @@ public class UserController {
             int currentStreak,
             int longestStreak,
             OffsetDateTime lastStudiedAt,
-            OffsetDateTime createdAt
+            OffsetDateTime createdAt,
+            // Pet growth stage (from XP) + mood (from how recently they studied).
+            PetGrowth.View pet
     ) {
         static UserResponse from(User user) {
             return new UserResponse(
@@ -83,8 +86,23 @@ public class UserController {
                     user.getCurrentStreak(),
                     user.getLongestStreak(),
                     user.getLastStudiedAt(),
-                    user.getCreatedAt()
+                    user.getCreatedAt(),
+                    PetGrowth.viewOf(user, OffsetDateTime.now())
             );
+        }
+    }
+
+    record WeeklyLeaderboardEntry(
+            UUID userId,
+            String displayName,
+            UUID petId,
+            PetGrowth.Stage petStage,
+            long weekSeconds
+    ) {
+        static WeeklyLeaderboardEntry from(UserService.WeeklyEntry e) {
+            User u = e.user();
+            return new WeeklyLeaderboardEntry(u.getUserId(), u.getDisplayName(), u.getPetId(),
+                    PetGrowth.Stage.of(u.getPetXp()), e.weekSeconds());
         }
     }
 
@@ -119,6 +137,15 @@ public class UserController {
     public List<UserResponse> getLeaderboard() {
         return userService.getLeaderboard().stream()
                 .map(UserResponse::from)
+                .toList();
+    }
+
+    // This calendar week's top studiers. Declared as a literal path so it wins over
+    // "/{userId}" (Spring prefers the more specific match).
+    @GetMapping("/leaderboard/weekly")
+    public List<WeeklyLeaderboardEntry> getWeeklyLeaderboard() {
+        return userService.getWeeklyLeaderboard().stream()
+                .map(WeeklyLeaderboardEntry::from)
                 .toList();
     }
 
